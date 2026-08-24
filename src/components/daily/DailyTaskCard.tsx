@@ -9,7 +9,6 @@ export function DailyTaskCard({
   today,
   canComplete,
   completedByLabel,
-  isOverdue,
   onComplete,
   onReturnToBacklog,
 }: {
@@ -18,11 +17,11 @@ export function DailyTaskCard({
   today: string
   canComplete: boolean
   completedByLabel?: string
-  isOverdue?: boolean
   onComplete: () => Promise<void>
   onReturnToBacklog?: () => Promise<void>
 }) {
   const isDone = task.status === 'done'
+  const isOverdue = !isDone && !!task.due_date && task.due_date < today
 
   return (
     <li

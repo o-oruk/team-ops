@@ -29,7 +29,6 @@ export function Daily() {
   })
   const completedToday = tasks.filter((t) => t.status === 'done' && t.completed_date === today)
   const pending = [...overdue, ...dueToday]
-  const overdueIds = new Set(overdue.map((t) => t.id))
 
   const visible =
     view === 'mine'
@@ -106,7 +105,6 @@ export function Daily() {
               today={today}
               canComplete={canComplete(task)}
               completedByLabel={completedByLabel(task)}
-              isOverdue={overdueIds.has(task.id)}
               onComplete={() => (profile ? completeTask(task.id, profile.id) : Promise.resolve())}
               onReturnToBacklog={canRemoveFromToday(task) ? () => returnToBacklog(task.id) : undefined}
             />
