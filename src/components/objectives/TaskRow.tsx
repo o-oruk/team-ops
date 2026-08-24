@@ -38,6 +38,7 @@ export function TaskRow({
   const today = todayISO()
   const isDone = task.status === 'done'
   const isUrgent = isUrgentDue(task.due_date, isDone, today)
+  const isOverdue = !isDone && !!task.due_date && task.due_date < today
   const assignees = profiles.filter((p) => task.assignee_ids.includes(p.id))
   const isAutoToday = task.status === 'backlog' && !!task.due_date && task.due_date <= today
   const fallbackCompleter = profiles.find((p) => p.id === task.completed_by)
@@ -51,7 +52,11 @@ export function TaskRow({
   }
 
   return (
-    <li className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
+    <li
+      className={`flex flex-wrap items-center gap-3 rounded-lg border px-4 py-3 ${
+        isOverdue ? 'border-red-200 bg-red-50' : 'border-slate-200 bg-white'
+      }`}
+    >
       <div className="min-w-[160px] flex-1">
         {editing ? (
           <input
