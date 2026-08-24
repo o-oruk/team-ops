@@ -9,6 +9,7 @@ export function DailyTaskCard({
   today,
   canComplete,
   completedByLabel,
+  isOverdue,
   onComplete,
   onReturnToBacklog,
 }: {
@@ -17,13 +18,18 @@ export function DailyTaskCard({
   today: string
   canComplete: boolean
   completedByLabel?: string
+  isOverdue?: boolean
   onComplete: () => Promise<void>
   onReturnToBacklog?: () => Promise<void>
 }) {
   const isDone = task.status === 'done'
 
   return (
-    <li className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
+    <li
+      className={`flex items-center gap-3 rounded-lg border px-4 py-3 ${
+        isOverdue && !isDone ? 'border-red-200 bg-red-50' : 'border-slate-200 bg-white'
+      }`}
+    >
       <input
         type="checkbox"
         checked={isDone}
