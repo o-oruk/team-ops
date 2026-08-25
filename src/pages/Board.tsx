@@ -11,7 +11,8 @@ export function Board() {
   const { profile } = useAuth()
   const { objectives, addObjective, renameObjective, deleteObjective } = useObjectives()
   const { profiles } = useProfiles()
-  const { tasks, addTask, updateTask, toggleAssignee, deleteTask, pushToDaily, reopenTask } = useTasks()
+  const { tasks, addTask, updateTask, toggleAssignee, deleteTask, pushToDaily, reopenTask, updateCompletedDate } =
+    useTasks()
   const [activeId, setActiveId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -128,6 +129,7 @@ export function Board() {
               onDelete={() => deleteTask(task.id)}
               onPushToDaily={() => pushToDaily(task.id)}
               onReopen={() => reopenTask(task)}
+              onUpdateCompletedDate={(date) => updateCompletedDate(task.id, date)}
             />
           ))}
         </ul>

@@ -24,6 +24,7 @@ export function TaskRow({
   onDelete,
   onPushToDaily,
   onReopen,
+  onUpdateCompletedDate,
 }: {
   task: Task
   profiles: Profile[]
@@ -32,9 +33,11 @@ export function TaskRow({
   onDelete: () => Promise<void>
   onPushToDaily: () => Promise<void>
   onReopen: () => Promise<void>
+  onUpdateCompletedDate: (date: string) => Promise<void>
 }) {
   const [editing, setEditing] = useState(false)
   const [title, setTitle] = useState(task.title)
+  const [editingCompletedDate, setEditingCompletedDate] = useState(false)
   const today = todayISO()
   const isDone = task.status === 'done'
   const isUrgent = isUrgentDue(task.due_date, isDone, today)
@@ -75,16 +78,39 @@ export function TaskRow({
           </button>
         )}
         {isDone && (
-          <p className="mt-0.5 text-xs text-slate-400">
-            {completers.length > 0 &&
-              `Completed by ${joinNames(completers.map((p) => p.name))} on ${task.completed_date}`}
+          <div className="mt-0.5 flex flex-wrap items-center gap-1 text-xs text-slate-400">
+            {completers.length > 0 && <span>Completed by {joinNames(completers.map((p) => p.name))} on</span>}
+            {editingCompletedDate ? (
+              <DatePicker
+                value={task.completed_date ?? today}
+                onChange={(date) => {
+                  if (date) void onUpdateCompletedDate(date)
+                  setEditingCompletedDate(false)
+                }}
+                maxDate={today}
+                triggerClassName="!px-1.5 !py-0.5 !text-xs"
+              />
+            ) : (
+              <button
+                onClick={() => setEditingCompletedDate(true)}
+                title="Fix the completion date"
+                className="underline decoration-dotted underline-offset-2 hover:text-slate-600"
+              >
+                {task.completed_date
+                  ? new Date(task.completed_date + 'T00:00:00').toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                    })
+                  : 'unknown date'}
+              </button>
+            )}
             <button
               onClick={() => void onReopen()}
               className="ml-2 font-medium text-red-500 underline hover:text-red-700"
             >
               Undo
             </button>
-          </p>
+          </div>
         )}
       </div>
 

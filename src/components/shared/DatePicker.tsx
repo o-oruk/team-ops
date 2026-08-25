@@ -18,6 +18,7 @@ export function DatePicker({
   triggerClassName = '',
   invalid = false,
   minDate,
+  maxDate,
   confirmSelection = false,
 }: {
   value: string
@@ -27,6 +28,7 @@ export function DatePicker({
   triggerClassName?: string
   invalid?: boolean
   minDate?: string
+  maxDate?: string
   confirmSelection?: boolean
 }) {
   const [open, setOpen] = useState(false)
@@ -146,22 +148,24 @@ export function DatePicker({
                 const isSelected = iso === value
                 const isToday = iso === today
                 const isPast = !!minDate && iso < minDate
+                const isFuture = !!maxDate && iso > maxDate
+                const isDisabled = isPast || isFuture
                 return (
                   <button
                     key={iso}
                     type="button"
-                    disabled={isPast}
+                    disabled={isDisabled}
                     onClick={() => selectDay(iso)}
-                    title={isPast ? 'In the past' : isToday ? 'Today' : undefined}
+                    title={isPast ? 'In the past' : isFuture ? 'In the future' : isToday ? 'Today' : undefined}
                     className={`rounded-md py-1 text-xs transition-colors ${
-                      isPast
+                      isDisabled
                         ? 'cursor-not-allowed text-slate-200'
                         : isSelected
                           ? 'bg-accent font-semibold text-white'
                           : inMonth
                             ? 'text-slate-700 hover:bg-slate-100'
                             : 'text-slate-300 hover:bg-slate-50'
-                    } ${isToday && !isSelected && !isPast ? 'ring-1 ring-inset ring-accent font-semibold text-accent' : ''}`}
+                    } ${isToday && !isSelected && !isDisabled ? 'ring-1 ring-inset ring-accent font-semibold text-accent' : ''}`}
                   >
                     {day.getDate()}
                   </button>

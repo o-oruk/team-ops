@@ -124,6 +124,12 @@ export function useTasks() {
     await load()
   }
 
+  async function updateCompletedDate(id: string, date: string) {
+    const { error } = await supabase.from('tasks').update({ completed_date: date }).eq('id', id)
+    if (error) throw error
+    await load()
+  }
+
   async function reopenTask(task: Task) {
     const { error } = await supabase
       .from('tasks')
@@ -147,6 +153,7 @@ export function useTasks() {
     pushToDaily,
     returnToBacklog,
     completeTask,
+    updateCompletedDate,
     reopenTask,
     refresh: load,
   }
