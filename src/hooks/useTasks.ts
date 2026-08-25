@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { playTaskCompleteSound } from '../lib/sound'
 import type { Task, TaskWeight } from '../types'
 
 function todayISO() {
@@ -119,6 +120,7 @@ export function useTasks() {
       .update({ status: 'done', completed_by: completedBy, completed_date: todayISO() })
       .eq('id', id)
     if (error) throw error
+    playTaskCompleteSound()
     await load()
   }
 
