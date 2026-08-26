@@ -52,16 +52,13 @@ export function Progress() {
         <div className="min-w-0">
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-extrabold text-emerald-600">{teamStreak}</span>
-            <span className="text-sm font-semibold text-slate-700">
-              day{teamStreak === 1 ? '' : 's'} of the team hitting {STRONG_DAY_POINTS}+ points together
-            </span>
+            <span className="text-sm font-semibold text-slate-700">day streak</span>
           </div>
           <p className="text-xs text-slate-500">
-            {teamStreak === 0
-              ? `Nobody's lit it yet — land ${STRONG_DAY_POINTS}+ combined points today to start the streak.`
-              : hitTargetToday
-                ? "Today's already locked in. Keep it rolling tomorrow."
-                : `Today's still open — the team needs ${STRONG_DAY_POINTS - (teamPoints.get(today) ?? 0)} more point${STRONG_DAY_POINTS - (teamPoints.get(today) ?? 0) === 1 ? '' : 's'} to keep the streak alive.`}
+            {hitTargetToday
+              ? `Today's in.`
+              : `${STRONG_DAY_POINTS - (teamPoints.get(today) ?? 0)} point${STRONG_DAY_POINTS - (teamPoints.get(today) ?? 0) === 1 ? '' : 's'} short today.`}{' '}
+            Team needs {STRONG_DAY_POINTS}+ points a day to keep it going.
           </p>
         </div>
       </div>
