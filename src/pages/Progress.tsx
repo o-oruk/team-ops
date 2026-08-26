@@ -31,7 +31,6 @@ export function Progress() {
   const teamPoints = teamPointsByDate(tasks)
   const teamTotal = totalPoints(teamPoints, dates)
   const teamStreak = currentStreak(teamPoints, dates, today, STRONG_DAY_POINTS)
-  const hitTargetToday = (teamPoints.get(today) ?? 0) >= STRONG_DAY_POINTS
   const claimedProfiles = profiles.filter((p) => p.claimed)
 
   const [selectedDay, setSelectedDay] = useState<{ date: string; memberId: string | null } | null>(
@@ -54,12 +53,7 @@ export function Progress() {
             <span className="text-3xl font-extrabold text-emerald-600">{teamStreak}</span>
             <span className="text-sm font-semibold text-slate-700">day streak</span>
           </div>
-          <p className="text-xs text-slate-500">
-            {hitTargetToday
-              ? `Today's in.`
-              : `${STRONG_DAY_POINTS - (teamPoints.get(today) ?? 0)} point${STRONG_DAY_POINTS - (teamPoints.get(today) ?? 0) === 1 ? '' : 's'} short today.`}{' '}
-            Team needs {STRONG_DAY_POINTS}+ points a day to keep it going.
-          </p>
+          <p className="text-xs text-slate-500">Team needs {STRONG_DAY_POINTS}+ points a day to keep it going.</p>
         </div>
       </div>
 
