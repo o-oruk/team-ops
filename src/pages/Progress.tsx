@@ -7,9 +7,12 @@ import { DayTasksModal } from '../components/progress/DayTasksModal'
 import { Heatmap } from '../components/progress/Heatmap'
 import { MemberCard } from '../components/progress/MemberCard'
 import { PointsExplainer } from '../components/progress/PointsExplainer'
+import { StreakFlame } from '../components/progress/StreakFlame'
 import {
   SPRINT_START,
   SPRINT_END,
+  STRONG_DAY_POINTS,
+  currentStreak,
   dateRange,
   memberPointsByDate,
   tasksCompletedOn,
@@ -27,6 +30,8 @@ export function Progress() {
   const dates = dateRange(SPRINT_START, SPRINT_END)
   const teamPoints = teamPointsByDate(tasks)
   const teamTotal = totalPoints(teamPoints, dates)
+  const teamStreak = currentStreak(teamPoints, dates, today, STRONG_DAY_POINTS)
+  const hitTargetToday = (teamPoints.get(today) ?? 0) >= STRONG_DAY_POINTS
   const claimedProfiles = profiles.filter((p) => p.claimed)
 
   const [selectedDay, setSelectedDay] = useState<{ date: string; memberId: string | null } | null>(
@@ -40,6 +45,25 @@ export function Progress() {
         <p className="text-sm text-slate-500">
           Sprint window: {SPRINT_START} → {SPRINT_END} (pitch day)
         </p>
+      </div>
+
+      <div className="flex items-center gap-4 rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-white p-4">
+        <StreakFlame streak={teamStreak} size={48} />
+        <div className="min-w-0">
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-extrabold text-emerald-600">{teamStreak}</span>
+            <span className="text-sm font-semibold text-slate-700">
+              day{teamStreak === 1 ? '' : 's'} of the team hitting {STRONG_DAY_POINTS}+ points together
+            </span>
+          </div>
+          <p className="text-xs text-slate-500">
+            {teamStreak === 0
+              ? `Nobody's lit it yet — land ${STRONG_DAY_POINTS}+ combined points today to start the streak.`
+              : hitTargetToday
+                ? "Today's already locked in. Keep it rolling tomorrow."
+                : `Today's still open — the team needs ${STRONG_DAY_POINTS - (teamPoints.get(today) ?? 0)} more point${STRONG_DAY_POINTS - (teamPoints.get(today) ?? 0) === 1 ? '' : 's'} to keep the streak alive.`}
+          </p>
+        </div>
       </div>
 
       <PointsExplainer />

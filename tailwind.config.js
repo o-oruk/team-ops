@@ -16,6 +16,22 @@ export default {
           green: '#22c55e',
         },
       },
+      keyframes: {
+        flicker: {
+          '0%, 100%': { transform: 'scale(1) rotate(0deg)' },
+          '25%': { transform: 'scale(1.05) rotate(-2deg)' },
+          '50%': { transform: 'scale(0.97) rotate(1deg)' },
+          '75%': { transform: 'scale(1.04) rotate(2deg)' },
+        },
+        glowpulse: {
+          '0%, 100%': { opacity: '0.45', transform: 'scale(1)' },
+          '50%': { opacity: '0.75', transform: 'scale(1.15)' },
+        },
+      },
+      animation: {
+        flicker: 'flicker 1.8s ease-in-out infinite',
+        glowpulse: 'glowpulse 1.8s ease-in-out infinite',
+      },
     },
   },
   plugins: [],

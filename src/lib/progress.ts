@@ -6,6 +6,9 @@ export const SPRINT_END = '2026-10-15'
 
 export type PointLevel = 'future' | 'not-joined' | 'red' | 'orange' | 'yellow' | 'green'
 
+// Points a day needs to count as "strong" (green on the heatmap).
+export const STRONG_DAY_POINTS = 5
+
 export function todayISO() {
   return new Date().toLocaleDateString('en-CA')
 }
@@ -31,7 +34,7 @@ export function levelForPoints(
   if (date > today) return 'future'
   if (points <= 0) return 'red'
   if (points <= 2) return 'orange'
-  if (points <= 4) return 'yellow'
+  if (points < STRONG_DAY_POINTS) return 'yellow'
   return 'green'
 }
 
@@ -109,14 +112,20 @@ export function activeDayRate(
   return active / pastDates.length
 }
 
-export function currentStreak(pointsByDate: Map<string, number>, dates: string[], today: string): number {
+/** Consecutive days (ending today) with at least `minPoints`. Today doesn't break the streak until it's over. */
+export function currentStreak(
+  pointsByDate: Map<string, number>,
+  dates: string[],
+  today: string,
+  minPoints = 1,
+): number {
   const past = dates.filter((d) => d <= today).sort().reverse()
   if (past.length === 0) return 0
   let start = 0
-  if (past[0] === today && (pointsByDate.get(today) ?? 0) === 0) start = 1
+  if (past[0] === today && (pointsByDate.get(today) ?? 0) < minPoints) start = 1
   let streak = 0
   for (let i = start; i < past.length; i++) {
-    if ((pointsByDate.get(past[i]) ?? 0) > 0) streak++
+    if ((pointsByDate.get(past[i]) ?? 0) >= minPoints) streak++
     else break
   }
   return streak
