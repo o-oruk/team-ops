@@ -20,6 +20,9 @@ export function Heatmap({
   onSelectDate?: (date: string) => void
 }) {
   const weeks = toWeeks(dates)
+  const pitchDayRow = dates.includes(SPRINT_END)
+    ? new Date(SPRINT_END + 'T00:00:00').getDay()
+    : -1
 
   return (
     <div className="-m-2 overflow-x-auto p-2">
@@ -60,17 +63,47 @@ export function Heatmap({
                       width: cellSize,
                       height: cellSize,
                       backgroundColor: LEVEL_COLOR[level],
-                      boxShadow: isPitchDay ? '0 0 0 2px white, 0 0 0 4px #7c3aed' : undefined,
                     }}
-                    className={`rounded-[3px] transition-transform ${
+                    className={`relative rounded-[3px] transition-transform ${
                       clickable ? 'cursor-pointer hover:scale-150' : 'cursor-default'
                     }`}
-                  />
+                  >
+                    {isPitchDay && (
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-0 flex items-center justify-center font-bold text-red-600"
+                        style={{ fontSize: cellSize * 0.95, lineHeight: 1, textShadow: '0 0 2px rgba(255,255,255,0.85)' }}
+                      >
+                        ×
+                      </span>
+                    )}
+                  </button>
                 )
               })}
             </div>
           )
         })}
+        {pitchDayRow !== -1 && (
+          <div className="flex flex-col gap-[3px]">
+            <div style={{ height: 12 }} />
+            {Array.from({ length: 7 }, (_, row) =>
+              row === pitchDayRow ? (
+                <div
+                  key={row}
+                  style={{ height: cellSize }}
+                  className="flex items-center whitespace-nowrap text-[10px] font-semibold text-red-600"
+                >
+                  <span aria-hidden="true" className="mr-1">
+                    ×
+                  </span>
+                  Pitch comp day
+                </div>
+              ) : (
+                <div key={row} style={{ height: cellSize }} />
+              ),
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

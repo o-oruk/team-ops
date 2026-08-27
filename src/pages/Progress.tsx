@@ -71,9 +71,7 @@ export function Progress() {
           cellSize={13}
           onSelectDate={(date) => setSelectedDay({ date, memberId: null })}
         />
-        <p className="mt-2 text-xs text-slate-400">
-          Click any day to see what got done. The square ringed in purple is pitch day.
-        </p>
+        <p className="mt-2 text-xs text-slate-400">Click any day to see what got done.</p>
       </div>
 
       <div>
