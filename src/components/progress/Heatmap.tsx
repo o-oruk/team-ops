@@ -1,4 +1,4 @@
-import { LEVEL_COLOR, levelForPoints, toWeeks } from '../../lib/progress'
+import { LEVEL_COLOR, SPRINT_END, levelForPoints, toWeeks } from '../../lib/progress'
 
 const MONTH_NAMES = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
@@ -42,12 +42,13 @@ export function Heatmap({
                 const points = pointsByDate.get(date) ?? 0
                 const level = levelForPoints(points, date, today, joinedDate)
                 const clickable = onSelectDate && level !== 'future' && level !== 'not-joined'
+                const isPitchDay = date === SPRINT_END
                 const title =
                   level === 'not-joined'
                     ? `${date} — not on the team yet`
                     : level === 'future'
-                      ? `${date} — upcoming`
-                      : `${date} — ${points} point${points === 1 ? '' : 's'}${clickable ? ' (click for details)' : ''}`
+                      ? `${date} — upcoming${isPitchDay ? ' · 🏁 pitch day' : ''}`
+                      : `${date} — ${points} point${points === 1 ? '' : 's'}${isPitchDay ? ' · 🏁 pitch day' : ''}${clickable ? ' (click for details)' : ''}`
                 return (
                   <button
                     key={di}
@@ -59,6 +60,7 @@ export function Heatmap({
                       width: cellSize,
                       height: cellSize,
                       backgroundColor: LEVEL_COLOR[level],
+                      boxShadow: isPitchDay ? '0 0 0 2px white, 0 0 0 4px #7c3aed' : undefined,
                     }}
                     className={`rounded-[3px] transition-transform ${
                       clickable ? 'cursor-pointer hover:scale-150' : 'cursor-default'
