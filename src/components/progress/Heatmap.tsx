@@ -50,8 +50,8 @@ export function Heatmap({
                   level === 'not-joined'
                     ? `${date} — not on the team yet`
                     : level === 'future'
-                      ? `${date} — upcoming${isPitchDay ? ' · 🏁 pitch day' : ''}`
-                      : `${date} — ${points} point${points === 1 ? '' : 's'}${isPitchDay ? ' · 🏁 pitch day' : ''}${clickable ? ' (click for details)' : ''}`
+                      ? `${date} — upcoming${isPitchDay ? ' · Seal the Deal Competition' : ''}`
+                      : `${date} — ${points} point${points === 1 ? '' : 's'}${isPitchDay ? ' · Seal the Deal Competition' : ''}${clickable ? ' (click for details)' : ''}`
                 return (
                   <button
                     key={di}
@@ -93,10 +93,7 @@ export function Heatmap({
                   style={{ height: cellSize }}
                   className="flex items-center whitespace-nowrap text-[10px] font-semibold text-red-600"
                 >
-                  <span aria-hidden="true" className="mr-1">
-                    ×
-                  </span>
-                  Pitch comp day
+                  Seal the Deal Competition
                 </div>
               ) : (
                 <div key={row} style={{ height: cellSize }} />
