@@ -63,12 +63,13 @@ function ordinalSuffix(day: number): string {
   }
 }
 
-/** "2026-08-27" -> "August 27th, 2026" */
+/** "2026-08-27" -> "Thursday, August 27th, 2026" */
 export function formatSpelledOutDate(iso: string): string {
   const date = new Date(iso + 'T00:00:00')
+  const weekday = date.toLocaleDateString('en-US', { weekday: 'long' })
   const month = date.toLocaleDateString('en-US', { month: 'long' })
   const day = date.getDate()
-  return `${month} ${day}${ordinalSuffix(day)}, ${date.getFullYear()}`
+  return `${weekday}, ${month} ${day}${ordinalSuffix(day)}, ${date.getFullYear()}`
 }
 
 /** "Today" / "Tomorrow" / "N days from now" / "N days ago", relative to `today`. */
