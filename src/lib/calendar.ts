@@ -63,10 +63,10 @@ function ordinalSuffix(day: number): string {
   }
 }
 
-/** "2026-08-27" -> "Thursday, August 27th, 2026" */
+/** "2026-08-27" -> "Thu, August 27th, 2026" */
 export function formatSpelledOutDate(iso: string): string {
   const date = new Date(iso + 'T00:00:00')
-  const weekday = date.toLocaleDateString('en-US', { weekday: 'long' })
+  const weekday = date.toLocaleDateString('en-US', { weekday: 'short' })
   const month = date.toLocaleDateString('en-US', { month: 'long' })
   const day = date.getDate()
   return `${weekday}, ${month} ${day}${ordinalSuffix(day)}, ${date.getFullYear()}`
