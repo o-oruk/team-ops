@@ -41,10 +41,10 @@ export function levelForPoints(
 export const LEVEL_COLOR: Record<PointLevel, string> = {
   future: '#b6c1cf',
   'not-joined': '#94a3b8',
-  red: '#ef4444',
+  red: '#b91c1c',
   orange: '#f97316',
-  yellow: '#eab308',
-  green: '#22c55e',
+  yellow: '#fbbf24',
+  green: '#15803d',
 }
 
 export const LEVEL_LABEL: Record<PointLevel, string> = {
