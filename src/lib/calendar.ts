@@ -72,6 +72,16 @@ export function formatSpelledOutDate(iso: string): string {
   return `${weekday}, ${month} ${day}${ordinalSuffix(day)}, ${date.getFullYear()}`
 }
 
+/** "Today!" / "Tomorrow" / "N days left" for an upcoming (today-or-future) date. */
+export function daysLeftLabel(iso: string, today: string): string {
+  const target = new Date(iso + 'T00:00:00')
+  const now = new Date(today + 'T00:00:00')
+  const diffDays = Math.round((target.getTime() - now.getTime()) / 86_400_000)
+  if (diffDays <= 0) return 'Today!'
+  if (diffDays === 1) return 'Tomorrow'
+  return `${diffDays} days left`
+}
+
 /** "Today" / "Tomorrow" / "N days from now" / "N days ago", relative to `today`. */
 export function daysUntilLabel(iso: string, today: string): string {
   const target = new Date(iso + 'T00:00:00')
