@@ -18,22 +18,9 @@ function EventRow({ event, selected, onToggle }: { event: AgendaEvent; selected:
       type="button"
       onClick={onToggle}
       aria-pressed={selected}
-      className="flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors"
-      style={{
-        borderColor: selected ? color : '#e2e8f0',
-        backgroundColor: selected ? `${color}14` : 'transparent',
-      }}
+      className="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-left shadow-sm transition-all"
+      style={{ borderLeftWidth: 5, borderLeftColor: selected ? color : `${color}33` }}
     >
-      <span
-        className="flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-colors"
-        style={{ borderColor: selected ? color : '#cbd5e1', backgroundColor: selected ? color : 'transparent' }}
-      >
-        {selected && (
-          <svg viewBox="0 0 16 16" className="h-3 w-3 fill-white">
-            <path d="M6.5 11.5 3 8l1-1 2.5 2.5L12 4l1 1z" />
-          </svg>
-        )}
-      </span>
       <span className="min-w-0 flex-1">
         <span
           className="block truncate text-sm font-medium transition-colors"
@@ -46,6 +33,11 @@ function EventRow({ event, selected, onToggle }: { event: AgendaEvent; selected:
           {event.time && ` · ${formatTime(event.time)}`}
         </span>
       </span>
+      {selected && (
+        <svg viewBox="0 0 16 16" className="h-4 w-4 shrink-0" style={{ fill: color }} aria-hidden="true">
+          <path d="M6.5 11.5 3 8l1-1 2.5 2.5L12 4l1 1z" />
+        </svg>
+      )}
     </button>
   )
 }
