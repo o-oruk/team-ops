@@ -25,6 +25,7 @@ export function Calendar() {
     id: d.id,
     date: d.date,
     time: d.time,
+    end_time: d.end_time,
     title: d.title,
     type: d.type,
     note: d.note,

@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { formatTime, toISODate, type AgendaEvent } from '../../lib/calendar'
+import { addOneHourCapped, formatTimeRange, toISODate, type AgendaEvent } from '../../lib/calendar'
 import { DATE_TYPE_COLOR, DATE_TYPE_LABEL, type DateType, type ImportantDate } from '../../types'
 import { DatePicker } from '../shared/DatePicker'
+import { TimeSelect } from '../shared/TimeSelect'
 import { AddDateModal } from './AddDateModal'
 
 const TYPES: DateType[] = ['event', 'meeting', 'deadline']
@@ -12,21 +13,35 @@ function EditDateRow({
   onCancel,
 }: {
   event: AgendaEvent
-  onSave: (fields: Partial<Pick<ImportantDate, 'title' | 'date' | 'time' | 'type' | 'note'>>) => Promise<void>
+  onSave: (fields: Partial<Pick<ImportantDate, 'title' | 'date' | 'time' | 'end_time' | 'type' | 'note'>>) => Promise<void>
   onCancel: () => void
 }) {
   const [title, setTitle] = useState(event.title)
   const [date, setDate] = useState(event.date)
   const [time, setTime] = useState(event.time ?? '')
+  const [endTime, setEndTime] = useState(event.end_time ?? (event.time ? addOneHourCapped(event.time) : ''))
   const [type, setType] = useState<DateType>(event.type)
   const [note, setNote] = useState(event.note ?? '')
   const [busy, setBusy] = useState(false)
+
+  function handleTimeChange(newTime: string) {
+    setTime(newTime)
+    if (!newTime) setEndTime('')
+    else if (!endTime) setEndTime(addOneHourCapped(newTime))
+  }
 
   async function handleSave() {
     if (!title.trim() || !date) return
     setBusy(true)
     try {
-      await onSave({ title: title.trim(), date, time: time || null, type, note: note.trim() || null })
+      await onSave({
+        title: title.trim(),
+        date,
+        time: time || null,
+        end_time: time ? endTime || addOneHourCapped(time) : null,
+        type,
+        note: note.trim() || null,
+      })
     } finally {
       setBusy(false)
     }
@@ -46,12 +61,11 @@ function EditDateRow({
           className="min-w-[120px] flex-1 rounded-md border border-slate-300 px-2 py-1 text-sm focus-visible:ring-2 focus-visible:ring-accent"
         />
         <DatePicker value={date} onChange={setDate} minDate={toISODate(new Date())} confirmSelection />
-        <input
-          type="time"
-          value={time}
-          onChange={(e) => setTime(e.target.value)}
-          className="rounded-md border border-slate-300 px-2 py-1 text-sm focus-visible:ring-2 focus-visible:ring-accent"
-        />
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <TimeSelect value={time} onChange={handleTimeChange} allowEmpty className="py-1" />
+        <span className="text-xs text-slate-400">to</span>
+        <TimeSelect value={endTime} onChange={setEndTime} disabled={!time} className="py-1" />
       </div>
       <div className="flex gap-1">
         {TYPES.map((t) => (
@@ -103,12 +117,13 @@ export function DayPanel({
     title: string
     date: string
     time: string | null
+    end_time: string | null
     type: DateType
     note: string | null
   }) => Promise<void>
   onUpdateDate: (
     id: string,
-    fields: Partial<Pick<ImportantDate, 'title' | 'date' | 'time' | 'type' | 'note'>>,
+    fields: Partial<Pick<ImportantDate, 'title' | 'date' | 'time' | 'end_time' | 'type' | 'note'>>,
   ) => Promise<void>
   onDeleteDate: (id: string) => Promise<void>
 }) {
@@ -157,7 +172,9 @@ export function DayPanel({
                   <div>
                     <p className="text-sm font-medium text-slate-800">
                       {event.title}
-                      {event.time && <span className="ml-1.5 font-normal text-slate-400">{formatTime(event.time)}</span>}
+                      {event.time && (
+                        <span className="ml-1.5 font-normal text-slate-400">{formatTimeRange(event.time, event.end_time)}</span>
+                      )}
                     </p>
                     {event.note && <p className="text-xs text-slate-500">{event.note}</p>}
                   </div>

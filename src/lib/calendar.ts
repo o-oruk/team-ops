@@ -4,6 +4,7 @@ export interface AgendaEvent {
   id: string
   date: string
   time: string | null
+  end_time: string | null
   title: string
   type: DateType
   note: string | null
@@ -15,6 +16,25 @@ export function formatTime(time: string): string {
   const period = h >= 12 ? 'PM' : 'AM'
   const hour12 = h % 12 === 0 ? 12 : h % 12
   return `${hour12}:${m.toString().padStart(2, '0')} ${period}`
+}
+
+/** "14:30" and "15:30" -> "2:30 PM – 3:30 PM"; falls back to just the start time with no end. */
+export function formatTimeRange(start: string, end: string | null): string {
+  return end ? `${formatTime(start)} – ${formatTime(end)}` : formatTime(start)
+}
+
+/** Every 5-minute slot in a day, as "HH:MM" (24h, matches the Postgres `time` column format). */
+export const TIME_OPTIONS: string[] = Array.from({ length: 24 * 12 }, (_, i) => {
+  const h = Math.floor(i / 12)
+  const m = (i % 12) * 5
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`
+})
+
+/** Adds 1 hour to a "HH:MM" time, capped at 23:55 rather than wrapping into the next day. */
+export function addOneHourCapped(time: string): string {
+  const [h, m] = time.split(':').map(Number)
+  const total = Math.min(h * 60 + m + 60, 23 * 60 + 55)
+  return `${Math.floor(total / 60).toString().padStart(2, '0')}:${(total % 60).toString().padStart(2, '0')}`
 }
 
 export function toISODate(d: Date): string {

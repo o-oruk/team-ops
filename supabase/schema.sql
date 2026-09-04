@@ -62,11 +62,25 @@ create table if not exists important_dates (
   title text not null,
   date date not null,
   time time,
+  end_time time,
   type text not null default 'event' check (type in ('meeting', 'deadline', 'event')),
   note text,
   created_by uuid references profiles (id) on delete set null,
   created_at timestamptz not null default now()
 );
+
+-- Adds end_time to important_dates created before this column existed, and backfills a 1-hour
+-- default (capped at 23:55, same day) for any existing timed entry that's missing one.
+alter table important_dates add column if not exists end_time time;
+update important_dates
+  set end_time = case
+    when (time + interval '1 hour')::time < time then time '23:55:00'
+    else (time + interval '1 hour')::time
+  end
+  where time is not null and end_time is null;
+alter table important_dates drop constraint if exists important_dates_time_pair_check;
+alter table important_dates add constraint important_dates_time_pair_check
+  check ((time is null) = (end_time is null));
 
 create unique index if not exists profiles_one_admin_only on profiles (role) where role = 'admin';
 

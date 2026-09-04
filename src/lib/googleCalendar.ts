@@ -15,12 +15,12 @@ function formatDateOnly(d: Date) {
 
 /**
  * Builds a Google Calendar "quick add" link prefilled with the event's title, date/time, and
- * note. Timed events default to a 1-hour duration (there's no end-time field in this app).
- * `authuserEmail`, if given, targets that Google account when it's already signed into the
+ * note. Timed events use the event's own end time, falling back to a 1-hour duration if none is
+ * set. `authuserEmail`, if given, targets that Google account when it's already signed into the
  * browser; otherwise Google falls back to its normal account picker.
  */
 export function googleCalendarUrl(
-  event: { title: string; date: string; time: string | null; note: string | null },
+  event: { title: string; date: string; time: string | null; end_time?: string | null; note: string | null },
   authuserEmail?: string,
 ): string {
   const params = new URLSearchParams({ action: 'TEMPLATE', text: event.title })
@@ -28,7 +28,9 @@ export function googleCalendarUrl(
 
   if (event.time) {
     const start = new Date(`${event.date}T${event.time}`)
-    const end = new Date(start.getTime() + 60 * 60 * 1000)
+    const end = event.end_time
+      ? new Date(`${event.date}T${event.end_time}`)
+      : new Date(start.getTime() + 60 * 60 * 1000)
     params.set('dates', `${formatLocal(start)}/${formatLocal(end)}`)
     params.set('ctz', Intl.DateTimeFormat().resolvedOptions().timeZone)
   } else {

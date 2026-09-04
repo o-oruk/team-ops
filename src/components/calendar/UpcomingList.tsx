@@ -1,4 +1,4 @@
-import { daysLeftLabel, formatTime, type AgendaEvent } from '../../lib/calendar'
+import { daysLeftLabel, formatTimeRange, type AgendaEvent } from '../../lib/calendar'
 import { DATE_TYPE_COLOR } from '../../types'
 
 function formatDate(date: string) {
@@ -46,7 +46,7 @@ export function UpcomingList({
               <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide" style={{ color }}>
                 <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
                 {formatDate(event.date)}
-                {event.time && ` · ${formatTime(event.time)}`}
+                {event.time && ` · ${formatTimeRange(event.time, event.end_time)}`}
               </span>
               <span className="text-[11px] font-semibold text-slate-400">{daysLeftLabel(event.date, today)}</span>
               <span className="truncate text-sm font-medium text-slate-800">{event.title}</span>

@@ -11,6 +11,7 @@ export function AddDateModal({
     title: string
     date: string
     time: string | null
+    end_time: string | null
     type: DateType
     note: string | null
   }) => Promise<void>

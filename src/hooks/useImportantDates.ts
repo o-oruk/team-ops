@@ -27,6 +27,7 @@ export function useImportantDates() {
     title: string
     date: string
     time: string | null
+    end_time: string | null
     type: ImportantDate['type']
     note: string | null
     createdBy: string
@@ -35,6 +36,7 @@ export function useImportantDates() {
       title: input.title,
       date: input.date,
       time: input.time,
+      end_time: input.end_time,
       type: input.type,
       note: input.note,
       created_by: input.createdBy,
@@ -45,7 +47,7 @@ export function useImportantDates() {
 
   async function updateDate(
     id: string,
-    fields: Partial<Pick<ImportantDate, 'title' | 'date' | 'time' | 'type' | 'note'>>,
+    fields: Partial<Pick<ImportantDate, 'title' | 'date' | 'time' | 'end_time' | 'type' | 'note'>>,
   ) {
     const { error } = await supabase.from('important_dates').update(fields).eq('id', id)
     if (error) throw error

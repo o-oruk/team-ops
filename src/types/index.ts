@@ -42,6 +42,7 @@ export interface ImportantDate {
   title: string
   date: string
   time: string | null
+  end_time: string | null
   type: DateType
   note: string | null
   created_by: string | null

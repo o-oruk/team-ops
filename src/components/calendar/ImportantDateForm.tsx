@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react'
-import { toISODate } from '../../lib/calendar'
+import { addOneHourCapped, toISODate } from '../../lib/calendar'
 import { DATE_TYPE_COLOR, DATE_TYPE_LABEL, type DateType } from '../../types'
 import { DatePicker } from '../shared/DatePicker'
+import { TimeSelect } from '../shared/TimeSelect'
 
 const TYPES: DateType[] = ['event', 'meeting', 'deadline']
 
@@ -14,6 +15,7 @@ export function ImportantDateForm({
     title: string
     date: string
     time: string | null
+    end_time: string | null
     type: DateType
     note: string | null
   }) => Promise<void>
@@ -21,16 +23,30 @@ export function ImportantDateForm({
   const [title, setTitle] = useState('')
   const [date, setDate] = useState(defaultDate)
   const [time, setTime] = useState('')
+  const [endTime, setEndTime] = useState('')
   const [type, setType] = useState<DateType>('event')
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
+
+  function handleTimeChange(newTime: string) {
+    setTime(newTime)
+    if (!newTime) setEndTime('')
+    else if (!endTime) setEndTime(addOneHourCapped(newTime))
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     if (!title.trim() || !date) return
     setBusy(true)
     try {
-      await onSubmit({ title: title.trim(), date, time: time || null, type, note: note.trim() || null })
+      await onSubmit({
+        title: title.trim(),
+        date,
+        time: time || null,
+        end_time: time ? endTime || addOneHourCapped(time) : null,
+        type,
+        note: note.trim() || null,
+      })
     } finally {
       setBusy(false)
     }
@@ -52,30 +68,43 @@ export function ImportantDateForm({
         />
       </div>
 
+      <div>
+        <span className="block text-sm font-medium text-slate-700">Date</span>
+        <div className="mt-1">
+          <DatePicker
+            value={date}
+            onChange={setDate}
+            placeholder="Pick a date"
+            triggerClassName="w-full py-2"
+            minDate={toISODate(new Date())}
+            confirmSelection
+          />
+        </div>
+      </div>
+
       <div className="flex gap-3">
         <div className="flex-1">
-          <span className="block text-sm font-medium text-slate-700">Date</span>
-          <div className="mt-1">
-            <DatePicker
-              value={date}
-              onChange={setDate}
-              placeholder="Pick a date"
-              triggerClassName="w-full py-2"
-              minDate={toISODate(new Date())}
-              confirmSelection
-            />
-          </div>
-        </div>
-        <div>
           <label htmlFor="date-time" className="block text-sm font-medium text-slate-700">
-            Time <span className="font-normal text-slate-400">(optional)</span>
+            Start time <span className="font-normal text-slate-400">(optional)</span>
           </label>
-          <input
+          <TimeSelect
             id="date-time"
-            type="time"
             value={time}
-            onChange={(e) => setTime(e.target.value)}
-            className="mt-1 rounded-md border border-slate-300 px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-accent"
+            onChange={handleTimeChange}
+            allowEmpty
+            className="mt-1 w-full"
+          />
+        </div>
+        <div className="flex-1">
+          <label htmlFor="date-end-time" className="block text-sm font-medium text-slate-700">
+            End time
+          </label>
+          <TimeSelect
+            id="date-end-time"
+            value={endTime}
+            onChange={setEndTime}
+            disabled={!time}
+            className="mt-1 w-full"
           />
         </div>
       </div>
