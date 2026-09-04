@@ -28,7 +28,14 @@ export function Daily() {
     return !!ref && ref < today
   })
   const completedToday = tasks.filter((t) => t.status === 'done' && t.completed_date === today)
-  const pending = [...overdue, ...dueToday]
+  // Order by actual closeness to deadline (due_date), not by when a task was pushed to today's
+  // list — a task pushed early for a later due date should sort after ones truly due sooner.
+  const deadlineKey = (t: Task) => t.due_date ?? referenceDate(t) ?? ''
+  const pending = [...overdue, ...dueToday].sort((a, b) => {
+    const ak = deadlineKey(a)
+    const bk = deadlineKey(b)
+    return ak < bk ? -1 : ak > bk ? 1 : 0
+  })
 
   const visible =
     view === 'mine'
