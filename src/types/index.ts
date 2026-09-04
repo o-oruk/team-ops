@@ -45,6 +45,7 @@ export interface ImportantDate {
   end_time: string | null
   type: DateType
   note: string | null
+  google_event_id: string | null
   created_by: string | null
   created_at: string
 }

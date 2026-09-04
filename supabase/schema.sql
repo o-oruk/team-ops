@@ -82,6 +82,10 @@ alter table important_dates drop constraint if exists important_dates_time_pair_
 alter table important_dates add constraint important_dates_time_pair_check
   check ((time is null) = (end_time is null));
 
+-- Remembers each entry's Google Calendar event ID once synced, so edits/deletes can be pushed
+-- to the same event instead of duplicating it, and never-synced entries can be found later.
+alter table important_dates add column if not exists google_event_id text;
+
 create unique index if not exists profiles_one_admin_only on profiles (role) where role = 'admin';
 
 create index if not exists tasks_objective_id_idx on tasks (objective_id);

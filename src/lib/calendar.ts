@@ -8,6 +8,7 @@ export interface AgendaEvent {
   title: string
   type: DateType
   note: string | null
+  google_event_id: string | null
 }
 
 /** Formats a Postgres time string ("14:30:00") as "2:30 PM". */

@@ -1,11 +1,38 @@
 import { useState } from 'react'
 import { addOneHourCapped, formatTimeRange, toISODate, type AgendaEvent } from '../../lib/calendar'
+import { isGoogleSyncConfigured } from '../../lib/googleConfig'
 import { DATE_TYPE_COLOR, DATE_TYPE_LABEL, type DateType, type ImportantDate } from '../../types'
 import { DatePicker } from '../shared/DatePicker'
 import { TimeSelect } from '../shared/TimeSelect'
 import { AddDateModal } from './AddDateModal'
 
 const TYPES: DateType[] = ['event', 'meeting', 'deadline']
+
+function SyncBadge({ onSync }: { onSync: () => Promise<void> }) {
+  const [busy, setBusy] = useState(false)
+
+  async function retry() {
+    setBusy(true)
+    try {
+      await onSync()
+    } catch {
+      // stays flagged as unsynced — user can retry again, or catch it via the bulk sync button
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <button
+      onClick={retry}
+      disabled={busy}
+      title="Not yet on the shared Google Calendar — click to retry"
+      className="rounded-md px-2 py-1 text-xs font-medium text-amber-600 hover:bg-amber-50 disabled:opacity-50"
+    >
+      {busy ? 'Syncing…' : '⟳ Not synced'}
+    </button>
+  )
+}
 
 function EditDateRow({
   event,
@@ -110,6 +137,7 @@ export function DayPanel({
   onAddDate,
   onUpdateDate,
   onDeleteDate,
+  onSyncToGoogle,
 }: {
   date: string
   events: AgendaEvent[]
@@ -126,6 +154,7 @@ export function DayPanel({
     fields: Partial<Pick<ImportantDate, 'title' | 'date' | 'time' | 'end_time' | 'type' | 'note'>>,
   ) => Promise<void>
   onDeleteDate: (id: string) => Promise<void>
+  onSyncToGoogle: (id: string) => Promise<void>
 }) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
@@ -180,6 +209,9 @@ export function DayPanel({
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
+                  {isGoogleSyncConfigured() && !event.google_event_id && (
+                    <SyncBadge onSync={() => onSyncToGoogle(event.id)} />
+                  )}
                   <button
                     onClick={() => setEditingId(event.id)}
                     className="rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-slate-100 hover:text-slate-700"
