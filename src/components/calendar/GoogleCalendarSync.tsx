@@ -4,7 +4,7 @@ import { getRecentGoogleEmails, googleCalendarUrl, rememberGoogleEmail } from '.
 import { DATE_TYPE_COLOR } from '../../types'
 import { GoogleCalendarIcon } from './GoogleCalendarIcon'
 
-type Step = 'mode' | 'select' | 'account'
+type Step = 'mode' | 'select' | 'account' | 'manual'
 
 function formatDate(date: string) {
   const d = new Date(date + 'T00:00:00')
@@ -54,6 +54,7 @@ function GoogleCalendarSyncModal({ events, today, onClose }: { events: AgendaEve
   const [step, setStep] = useState<Step>('mode')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [email, setEmail] = useState(() => getRecentGoogleEmails()[0] ?? '')
+  const [blockedLinks, setBlockedLinks] = useState<{ event: AgendaEvent; url: string }[]>([])
   const recentEmails = useMemo(() => getRecentGoogleEmails(), [])
   const datalistId = useId()
 
@@ -81,10 +82,20 @@ function GoogleCalendarSyncModal({ events, today, onClose }: { events: AgendaEve
   function addToCalendar() {
     const trimmed = email.trim()
     if (trimmed) rememberGoogleEmail(trimmed)
+    // Browsers only reliably allow the first window.open() per click — the rest get silently
+    // popup-blocked, so fall back to manual click-through links for whichever didn't open.
+    const blocked: { event: AgendaEvent; url: string }[] = []
     for (const event of selectedEvents) {
-      window.open(googleCalendarUrl(event, trimmed || undefined), '_blank', 'noopener,noreferrer')
+      const url = googleCalendarUrl(event, trimmed || undefined)
+      const win = window.open(url, '_blank', 'noopener,noreferrer')
+      if (!win || win.closed) blocked.push({ event, url })
     }
-    onClose()
+    if (blocked.length > 0) {
+      setBlockedLinks(blocked)
+      setStep('manual')
+    } else {
+      onClose()
+    }
   }
 
   return (
@@ -184,6 +195,37 @@ function GoogleCalendarSyncModal({ events, today, onClose }: { events: AgendaEve
                 className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent/90"
               >
                 Add to Google Calendar
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 'manual' && (
+          <div className="space-y-3">
+            <p className="text-sm text-slate-500">
+              Your browser blocked {blockedLinks.length > 1 ? 'these tabs' : 'this tab'} from opening automatically.
+              Click each one below to add it:
+            </p>
+            <div className="max-h-72 space-y-1.5 overflow-y-auto">
+              {blockedLinks.map(({ event, url }) => (
+                <a
+                  key={event.id}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-800 shadow-sm transition-colors hover:border-accent hover:bg-accent-light"
+                  style={{ borderLeftWidth: 5, borderLeftColor: DATE_TYPE_COLOR[event.type] }}
+                >
+                  {event.title}
+                </a>
+              ))}
+            </div>
+            <div className="flex justify-end pt-1">
+              <button
+                onClick={onClose}
+                className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent/90"
+              >
+                Done
               </button>
             </div>
           </div>
