@@ -3,7 +3,6 @@ import { formatTime, toISODate, type AgendaEvent } from '../../lib/calendar'
 import { DATE_TYPE_COLOR, DATE_TYPE_LABEL, type DateType, type ImportantDate } from '../../types'
 import { DatePicker } from '../shared/DatePicker'
 import { AddDateModal } from './AddDateModal'
-import { AddToGoogleCalendarButton } from './AddToGoogleCalendarButton'
 
 const TYPES: DateType[] = ['event', 'meeting', 'deadline']
 
@@ -164,7 +163,6 @@ export function DayPanel({
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
-                  <AddToGoogleCalendarButton event={event} />
                   <button
                     onClick={() => setEditingId(event.id)}
                     className="rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-slate-100 hover:text-slate-700"

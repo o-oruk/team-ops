@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useImportantDates } from '../hooks/useImportantDates'
 import { todayISO } from '../hooks/useTasks'
 import { DayPanel } from '../components/calendar/DayPanel'
+import { GoogleCalendarSync } from '../components/calendar/GoogleCalendarSync'
 import { MonthCalendar } from '../components/calendar/MonthCalendar'
 import { UpcomingList } from '../components/calendar/UpcomingList'
 import { startOfMonth, type AgendaEvent } from '../lib/calendar'
@@ -39,7 +40,10 @@ export function Calendar() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-lg font-semibold text-slate-900">Calendar</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-lg font-semibold text-slate-900">Calendar</h1>
+        <GoogleCalendarSync events={events} today={today} />
+      </div>
 
       <UpcomingList events={events} today={today} onJumpTo={jumpTo} />
 
