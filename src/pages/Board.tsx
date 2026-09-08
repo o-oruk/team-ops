@@ -125,7 +125,15 @@ export function Board() {
               task={task}
               profiles={profiles}
               onUpdate={(fields) => updateTask(task.id, fields)}
-              onToggleAssignee={(profileId, assign) => void toggleAssignee(task.id, profileId, assign, profile?.id)}
+              onToggleAssignee={(profileId, assign) => {
+                if (assign) {
+                  const name = profiles.find((p) => p.id === profileId)?.name || 'This person'
+                  if (!confirm(`${name} will get an email saying they've been assigned "${task.title}". Continue?`)) {
+                    return
+                  }
+                }
+                void toggleAssignee(task.id, profileId, assign, profile?.id)
+              }}
               onDelete={() => deleteTask(task.id)}
               onPushToDaily={() => pushToDaily(task.id)}
               onReopen={() => reopenTask(task)}
