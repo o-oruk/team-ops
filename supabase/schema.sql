@@ -82,9 +82,26 @@ alter table important_dates drop constraint if exists important_dates_time_pair_
 alter table important_dates add constraint important_dates_time_pair_check
   check ((time is null) = (end_time is null));
 
--- Remembers each entry's Google Calendar event ID once synced, so edits/deletes can be pushed
--- to the same event instead of duplicating it, and never-synced entries can be found later.
+-- Superseded by google_calendar_links below (which records the same thing per Google account).
+-- Kept so the column doesn't vanish from under an older deployed build mid-rollout.
 alter table important_dates add column if not exists google_event_id text;
+
+-- One row per (dashboard user, event, Google account) that's been added to Google Calendar.
+-- This is what makes "Add to Google Calendar" safe to press repeatedly: an event already listed
+-- here for the chosen account is skipped, so only genuinely new entries get pushed. It's per
+-- account rather than per event because everyone syncs into their own "Amana Vision" calendar.
+create table if not exists google_calendar_links (
+  id uuid primary key default gen_random_uuid(),
+  important_date_id uuid not null references important_dates (id) on delete cascade,
+  linked_by uuid not null references profiles (id) on delete cascade,
+  google_account_email text not null,
+  google_calendar_id text not null,
+  google_event_id text not null,
+  created_at timestamptz not null default now(),
+  unique (linked_by, important_date_id, google_account_email)
+);
+
+create index if not exists google_calendar_links_date_idx on google_calendar_links (important_date_id);
 
 create unique index if not exists profiles_one_admin_only on profiles (role) where role = 'admin';
 
@@ -130,6 +147,7 @@ alter table objectives enable row level security;
 alter table tasks enable row level security;
 alter table task_assignees enable row level security;
 alter table important_dates enable row level security;
+alter table google_calendar_links enable row level security;
 alter table messages enable row level security;
 alter table message_reads enable row level security;
 
@@ -188,6 +206,15 @@ create policy "important_dates full access for signed-in users"
   to authenticated
   using (true)
   with check (true);
+
+-- Which Google accounts someone syncs to is their own business, so unlike the shared tables
+-- above these rows are visible only to the user who created them.
+drop policy if exists "google_calendar_links are private to their owner" on google_calendar_links;
+create policy "google_calendar_links are private to their owner"
+  on google_calendar_links for all
+  to authenticated
+  using (linked_by = auth.uid())
+  with check (linked_by = auth.uid());
 
 create policy "messages readable by signed-in users"
   on messages for select
