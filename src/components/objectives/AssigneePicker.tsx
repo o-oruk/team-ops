@@ -5,10 +5,12 @@ import { Avatar } from '../layout/Avatar'
 
 /**
  * Lets you pick several teammates in one sitting before anything happens — clicks while open only
- * change a local pending selection, and `onApply` fires once, with everything that changed, right
- * as the dropdown closes. That's what lets a caller batch a DB write and a single notification
- * covering everyone newly added, instead of one round-trip (and one email) per click — which used
- * to mean the first person assigned had no idea a second person was about to join them.
+ * change a local pending selection. Nothing is applied until the explicit Confirm button is
+ * pressed, which reports everything that changed via `onApply` in one shot. That's what lets a
+ * caller batch a DB write and a single notification covering everyone newly added, instead of one
+ * round-trip (and one email) per click — which used to mean the first person assigned had no idea
+ * a second person was about to join them. Dismissing any other way (Cancel, clicking outside)
+ * discards the pending selection instead.
  */
 export function AssigneePicker({
   profiles,
@@ -29,7 +31,11 @@ export function AssigneePicker({
     setOpen(true)
   }
 
-  function closeAndApply() {
+  function cancel() {
+    setOpen(false)
+  }
+
+  function confirmSelection() {
     setOpen(false)
     const added = pending.filter((id) => !selectedIds.includes(id))
     const removed = selectedIds.filter((id) => !pending.includes(id))
@@ -39,21 +45,22 @@ export function AssigneePicker({
   useEffect(() => {
     if (!open) return
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) closeAndApply()
+      if (ref.current && !ref.current.contains(e.target as Node)) cancel()
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, pending, selectedIds])
+  }, [open])
 
   const claimed = profiles.filter((p) => p.claimed)
   const selected = claimed.filter((p) => selectedIds.includes(p.id))
+  const hasChanges =
+    pending.length !== selectedIds.length || pending.some((id) => !selectedIds.includes(id))
 
   return (
     <div className="relative" ref={ref}>
       <button
         type="button"
-        onClick={() => (open ? closeAndApply() : openPicker())}
+        onClick={() => (open ? cancel() : openPicker())}
         className="flex items-center gap-1.5 rounded-md border border-slate-300 px-2 py-1 text-sm hover:border-accent"
       >
         {selected.length === 0 ? (
@@ -118,6 +125,24 @@ export function AssigneePicker({
               )
             })
           )}
+          <div className="my-1 h-px bg-slate-100" />
+          <div className="flex gap-1.5 px-0.5 pt-0.5">
+            <button
+              type="button"
+              onClick={cancel}
+              className="flex-1 rounded-md px-2 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={confirmSelection}
+              disabled={!hasChanges}
+              className="flex-1 rounded-md bg-accent px-2 py-1.5 text-xs font-medium text-white hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Confirm
+            </button>
+          </div>
         </div>
       )}
     </div>
