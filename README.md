@@ -73,6 +73,44 @@ by hand with one click on the event's color swatch if you want it there too.
 (`google_calendar_links` in the schema is unused leftover from an earlier bulk-sync version of this
 feature — harmless to leave, or drop the table if you'd rather clean it up.)
 
+## Task-assignment emails (optional)
+
+Emails a teammate when they're assigned a task (at creation, or via the assignee picker on an
+existing task). Skip this section and the app works fine without it — a failed or unconfigured
+send never blocks assigning the task, it just silently doesn't email anyone.
+
+This needs a real mail-sending backend — a browser app can't send email directly without shipping
+credentials in the page for anyone to steal — so it runs as a Supabase Edge Function
+(`supabase/functions/notify-task-assigned`) that sends via Gmail SMTP.
+
+1. **Turn on 2-Step Verification** on the sending Google account (myaccount.google.com/security),
+   if it isn't already on — required before Google will issue an App Password.
+2. **Create an App Password** — myaccount.google.com/apppasswords → name it anything (e.g. "Amana
+   Vision dashboard") → copy the 16-character password it generates. This is *not* the account's
+   normal login password, and it's the only credential this feature needs — no OAuth, no consent
+   screen.
+3. **Deploy the function** — in the Supabase dashboard, **Edge Functions** → **Deploy a new
+   function** → **Via Editor**, name it `notify-task-assigned`, and paste in the contents of
+   `supabase/functions/notify-task-assigned/index.ts` from this repo. Leave JWT verification
+   **on** (the default) — that's what restricts calls to signed-in dashboard users.
+4. **Set its secrets** — same Edge Functions page → **Secrets** → add:
+
+   | Secret | Value |
+   |---|---|
+   | `SMTP_HOSTNAME` | `smtp.gmail.com` |
+   | `SMTP_PORT` | `465` |
+   | `SMTP_SECURE` | `true` |
+   | `SMTP_USERNAME` | the sending Gmail address |
+   | `SMTP_PASSWORD` | the App Password from step 2 |
+   | `SMTP_FROM` | e.g. `Amana Vision <that-same-address@gmail.com>` |
+
+   (`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`, which the function uses to look up the task and
+   assignees' emails, are provided automatically — nothing to set for those.)
+5. Redeploy the function if you edited it after the first deploy (**Deploy updates**).
+
+That's it — no client-side env var, nothing in `.env`. Try it by assigning a task to someone on the
+Board screen.
+
 ## Environment variables
 
 | Variable | Where it's used | Safe to expose? |

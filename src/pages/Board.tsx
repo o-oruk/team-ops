@@ -125,7 +125,7 @@ export function Board() {
               task={task}
               profiles={profiles}
               onUpdate={(fields) => updateTask(task.id, fields)}
-              onToggleAssignee={(profileId, assign) => void toggleAssignee(task.id, profileId, assign)}
+              onToggleAssignee={(profileId, assign) => void toggleAssignee(task.id, profileId, assign, profile?.id)}
               onDelete={() => deleteTask(task.id)}
               onPushToDaily={() => pushToDaily(task.id)}
               onReopen={() => reopenTask(task)}

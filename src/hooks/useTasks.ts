@@ -7,6 +7,20 @@ function todayISO() {
   return new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local time
 }
 
+/**
+ * Emails newly-assigned teammates via the notify-task-assigned edge function. Best-effort and
+ * silent: assigning a task must never fail (or feel slow) just because a notification email did.
+ */
+function notifyAssignees(taskId: string, assigneeProfileIds: string[], actingProfileId: string | undefined) {
+  if (assigneeProfileIds.length === 0) return
+  supabase.functions
+    .invoke('notify-task-assigned', { body: { taskId, assigneeProfileIds, actingProfileId } })
+    .then(({ error }) => {
+      if (error) console.warn('Task-assignment email failed:', error)
+    })
+    .catch((error) => console.warn('Task-assignment email failed:', error))
+}
+
 type TaskRow = Omit<Task, 'assignee_ids'> & { task_assignees: { profile_id: string }[] }
 
 export function useTasks() {
@@ -65,6 +79,7 @@ export function useTasks() {
         .from('task_assignees')
         .insert(input.assigneeIds.map((profileId) => ({ task_id: data.id, profile_id: profileId })))
       if (assigneeError) throw assigneeError
+      notifyAssignees(data.id, input.assigneeIds, input.createdBy)
     }
     await load()
   }
@@ -75,10 +90,11 @@ export function useTasks() {
     await load()
   }
 
-  async function toggleAssignee(taskId: string, profileId: string, assign: boolean) {
+  async function toggleAssignee(taskId: string, profileId: string, assign: boolean, actingProfileId?: string) {
     if (assign) {
       const { error } = await supabase.from('task_assignees').insert({ task_id: taskId, profile_id: profileId })
       if (error) throw error
+      notifyAssignees(taskId, [profileId], actingProfileId)
     } else {
       const { error } = await supabase
         .from('task_assignees')
