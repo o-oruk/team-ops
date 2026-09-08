@@ -6,6 +6,7 @@ import { useProfiles } from '../../hooks/useProfiles'
 import { useChat } from '../../hooks/useChat'
 import { Avatar } from './Avatar'
 import { Countdown } from './Countdown'
+import { ExportDataButton } from './ExportDataButton'
 import { Logo } from './Logo'
 
 const NAV_ITEMS = [
@@ -79,6 +80,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               </nav>
             </div>
             <div className="flex items-center gap-3">
+              <ExportDataButton />
+              <div className="h-5 w-px bg-slate-200" />
               {teammates.length > 0 && (
                 <>
                   <div className="flex -space-x-1.5">
