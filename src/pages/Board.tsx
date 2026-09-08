@@ -11,7 +11,7 @@ export function Board() {
   const { profile } = useAuth()
   const { objectives, addObjective, renameObjective, deleteObjective } = useObjectives()
   const { profiles } = useProfiles()
-  const { tasks, addTask, updateTask, toggleAssignee, deleteTask, pushToDaily, reopenTask, updateCompletedDate } =
+  const { tasks, addTask, updateTask, updateAssignees, deleteTask, pushToDaily, reopenTask, updateCompletedDate } =
     useTasks()
   const [activeId, setActiveId] = useState<string | null>(null)
 
@@ -125,14 +125,16 @@ export function Board() {
               task={task}
               profiles={profiles}
               onUpdate={(fields) => updateTask(task.id, fields)}
-              onToggleAssignee={(profileId, assign) => {
-                if (assign) {
-                  const name = profiles.find((p) => p.id === profileId)?.name || 'This person'
-                  if (!confirm(`${name} will get an email saying they've been assigned "${task.title}". Continue?`)) {
+              onApplyAssignees={(addedIds, removedIds) => {
+                if (addedIds.length > 0) {
+                  const names = addedIds.map((id) => profiles.find((p) => p.id === id)?.name || 'This person')
+                  const nameList =
+                    names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
+                  if (!confirm(`${nameList} will get an email saying they've been assigned "${task.title}". Continue?`)) {
                     return
                   }
                 }
-                void toggleAssignee(task.id, profileId, assign, profile?.id)
+                void updateAssignees(task.id, addedIds, removedIds, profile?.id)
               }}
               onDelete={() => deleteTask(task.id)}
               onPushToDaily={() => pushToDaily(task.id)}

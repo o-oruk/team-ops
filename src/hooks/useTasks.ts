@@ -90,19 +90,32 @@ export function useTasks() {
     await load()
   }
 
-  async function toggleAssignee(taskId: string, profileId: string, assign: boolean, actingProfileId?: string) {
-    if (assign) {
-      const { error } = await supabase.from('task_assignees').insert({ task_id: taskId, profile_id: profileId })
+  /**
+   * Applies every add/remove from one AssigneePicker session as a single batch, so the
+   * notification email — sent once, for the whole batch — correctly shows everyone newly added
+   * together rather than each of them finding out about the others' assignment separately.
+   */
+  async function updateAssignees(
+    taskId: string,
+    addedProfileIds: string[],
+    removedProfileIds: string[],
+    actingProfileId?: string,
+  ) {
+    if (addedProfileIds.length > 0) {
+      const { error } = await supabase
+        .from('task_assignees')
+        .insert(addedProfileIds.map((profileId) => ({ task_id: taskId, profile_id: profileId })))
       if (error) throw error
-      notifyAssignees(taskId, [profileId], actingProfileId)
-    } else {
+    }
+    if (removedProfileIds.length > 0) {
       const { error } = await supabase
         .from('task_assignees')
         .delete()
         .eq('task_id', taskId)
-        .eq('profile_id', profileId)
+        .in('profile_id', removedProfileIds)
       if (error) throw error
     }
+    if (addedProfileIds.length > 0) notifyAssignees(taskId, addedProfileIds, actingProfileId)
     await load()
   }
 
@@ -164,7 +177,7 @@ export function useTasks() {
     loading,
     addTask,
     updateTask,
-    toggleAssignee,
+    updateAssignees,
     deleteTask,
     pushToDaily,
     returnToBacklog,

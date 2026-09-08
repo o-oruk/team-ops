@@ -3,27 +3,48 @@ import type { Profile } from '../../types'
 import { usePresence } from '../../hooks/usePresence'
 import { Avatar } from '../layout/Avatar'
 
+/**
+ * Lets you pick several teammates in one sitting before anything happens — clicks while open only
+ * change a local pending selection, and `onApply` fires once, with everything that changed, right
+ * as the dropdown closes. That's what lets a caller batch a DB write and a single notification
+ * covering everyone newly added, instead of one round-trip (and one email) per click — which used
+ * to mean the first person assigned had no idea a second person was about to join them.
+ */
 export function AssigneePicker({
   profiles,
   selectedIds,
-  onToggle,
+  onApply,
 }: {
   profiles: Profile[]
   selectedIds: string[]
-  onToggle: (profileId: string, assign: boolean) => void
+  onApply: (addedIds: string[], removedIds: string[]) => void
 }) {
   const [open, setOpen] = useState(false)
+  const [pending, setPending] = useState<string[]>(selectedIds)
   const ref = useRef<HTMLDivElement>(null)
   const presence = usePresence()
+
+  function openPicker() {
+    setPending(selectedIds)
+    setOpen(true)
+  }
+
+  function closeAndApply() {
+    setOpen(false)
+    const added = pending.filter((id) => !selectedIds.includes(id))
+    const removed = selectedIds.filter((id) => !pending.includes(id))
+    if (added.length > 0 || removed.length > 0) onApply(added, removed)
+  }
 
   useEffect(() => {
     if (!open) return
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      if (ref.current && !ref.current.contains(e.target as Node)) closeAndApply()
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
-  }, [open])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, pending, selectedIds])
 
   const claimed = profiles.filter((p) => p.claimed)
   const selected = claimed.filter((p) => selectedIds.includes(p.id))
@@ -32,7 +53,7 @@ export function AssigneePicker({
     <div className="relative" ref={ref}>
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => (open ? closeAndApply() : openPicker())}
         className="flex items-center gap-1.5 rounded-md border border-slate-300 px-2 py-1 text-sm hover:border-accent"
       >
         {selected.length === 0 ? (
@@ -53,17 +74,17 @@ export function AssigneePicker({
         <div className="absolute left-0 top-full z-20 mt-1 w-44 rounded-lg border border-slate-200 bg-white p-1.5 shadow-lg">
           <button
             type="button"
-            onClick={() => selected.forEach((p) => onToggle(p.id, false))}
-            disabled={selected.length === 0}
+            onClick={() => setPending([])}
+            disabled={pending.length === 0}
             className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${
-              selected.length === 0 ? 'cursor-default text-slate-300' : 'text-slate-500 hover:bg-slate-50'
+              pending.length === 0 ? 'cursor-default text-slate-300' : 'text-slate-500 hover:bg-slate-50'
             }`}
           >
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-slate-300 text-xs text-slate-400">
               ?
             </span>
             <span className="flex-1">Unassigned</span>
-            {selected.length === 0 && (
+            {pending.length === 0 && (
               <svg viewBox="0 0 12 12" className="h-3.5 w-3.5 shrink-0 text-accent" fill="none">
                 <path d="M2 6l2.5 2.5L10 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
@@ -74,19 +95,21 @@ export function AssigneePicker({
             <p className="px-2 py-1.5 text-xs text-slate-400">No teammates yet</p>
           ) : (
             claimed.map((p) => {
-              const isSelected = selectedIds.includes(p.id)
+              const isPending = pending.includes(p.id)
               return (
                 <button
                   key={p.id}
                   type="button"
-                  onClick={() => onToggle(p.id, !isSelected)}
+                  onClick={() =>
+                    setPending((ids) => (isPending ? ids.filter((id) => id !== p.id) : [...ids, p.id]))
+                  }
                   className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-slate-50 ${
-                    isSelected ? 'bg-accent-light' : ''
+                    isPending ? 'bg-accent-light' : ''
                   }`}
                 >
                   <Avatar profile={p} size="sm" status={presence[p.id] ?? 'offline'} />
                   <span className="flex-1 truncate text-slate-700">{p.name}</span>
-                  {isSelected && (
+                  {isPending && (
                     <svg viewBox="0 0 12 12" className="h-3.5 w-3.5 shrink-0 text-accent" fill="none">
                       <path d="M2 6l2.5 2.5L10 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>

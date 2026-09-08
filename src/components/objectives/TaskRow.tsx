@@ -20,7 +20,7 @@ export function TaskRow({
   task,
   profiles,
   onUpdate,
-  onToggleAssignee,
+  onApplyAssignees,
   onDelete,
   onPushToDaily,
   onReopen,
@@ -29,7 +29,7 @@ export function TaskRow({
   task: Task
   profiles: Profile[]
   onUpdate: (fields: Partial<Pick<Task, 'title' | 'weight' | 'due_date'>>) => Promise<void>
-  onToggleAssignee: (profileId: string, assign: boolean) => void
+  onApplyAssignees: (addedIds: string[], removedIds: string[]) => void
   onDelete: () => Promise<void>
   onPushToDaily: () => Promise<void>
   onReopen: () => Promise<void>
@@ -157,7 +157,7 @@ export function TaskRow({
           </div>
         )
       ) : (
-        <AssigneePicker profiles={profiles} selectedIds={task.assignee_ids} onToggle={onToggleAssignee} />
+        <AssigneePicker profiles={profiles} selectedIds={task.assignee_ids} onApply={onApplyAssignees} />
       )}
 
       <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">

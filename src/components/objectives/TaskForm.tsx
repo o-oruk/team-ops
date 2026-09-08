@@ -74,8 +74,8 @@ export function TaskForm({
       <AssigneePicker
         profiles={profiles}
         selectedIds={assigneeIds}
-        onToggle={(profileId, assign) =>
-          setAssigneeIds((ids) => (assign ? [...ids, profileId] : ids.filter((id) => id !== profileId)))
+        onApply={(added, removed) =>
+          setAssigneeIds((ids) => [...ids.filter((id) => !removed.includes(id)), ...added])
         }
       />
 
