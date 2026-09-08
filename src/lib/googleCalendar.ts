@@ -31,6 +31,11 @@ export function googleEventIdFor(importantDateId: string): string {
   return `amanavision${importantDateId.replace(/-/g, '').toLowerCase()}`
 }
 
+/** "14:30" or "14:30:00" -> "14:30:00" — tolerates either so a stray seconds component upstream can't silently build an invalid dateTime again. */
+function withSeconds(time: string): string {
+  return time.length === 5 ? `${time}:00` : time
+}
+
 function buildEventResource(event: SyncableEvent) {
   const shared = {
     summary: event.title,
@@ -42,8 +47,8 @@ function buildEventResource(event: SyncableEvent) {
     const endTime = event.end_time ?? addOneHourCapped(event.time)
     return {
       ...shared,
-      start: { dateTime: `${event.date}T${event.time}:00`, timeZone },
-      end: { dateTime: `${event.date}T${endTime}:00`, timeZone },
+      start: { dateTime: `${event.date}T${withSeconds(event.time)}`, timeZone },
+      end: { dateTime: `${event.date}T${withSeconds(endTime)}`, timeZone },
     }
   }
   const start = new Date(`${event.date}T00:00:00`)

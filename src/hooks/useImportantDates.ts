@@ -12,7 +12,9 @@ export function useImportantDates() {
 
   async function load() {
     const { data } = await supabase.from('important_dates').select('*').order('date')
-    setDates(data ?? [])
+    // Postgres returns `time` columns as "14:30:00" — trim to "14:30" so every consumer (the
+    // 5-minute TimeSelect dropdown, Google event building) can assume one consistent format.
+    setDates((data ?? []).map((d) => ({ ...d, time: d.time?.slice(0, 5) ?? null, end_time: d.end_time?.slice(0, 5) ?? null })))
     setLoading(false)
   }
 
