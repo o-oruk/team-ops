@@ -73,10 +73,19 @@ only appears once `VITE_GOOGLE_CLIENT_ID` is set.
 3. **Configure the OAuth consent screen** — APIs & Services → OAuth consent screen. User type:
    External. Fill in an app name and support email. Under **Scopes**, add
    `https://www.googleapis.com/auth/calendar` (create/manage calendars) plus `userinfo.email` and
-   `userinfo.profile` (so the account picker can show which account you're adding to). Under **Test
-   users**, add the Google account email of everyone who'll use it — *every* account they want to
-   sync into, not just their main one (up to 100). Keeping the app in "Testing" publishing status is
-   fine indefinitely for a small team — no Google review needed.
+   `userinfo.profile` (so the account picker can show which account you're adding to). Then click
+   **Publish app** to move it out of "Testing" status.
+
+   Publishing matters because "Testing" status only lets in Google accounts you've listed by email
+   as test users — there's no way to hand your teammates a working link without first collecting
+   everyone's Google address, defeating the point of letting each person pick their own account(s).
+   Publishing removes that allowlist: anyone can sign in.
+
+   The trade-off is that because calendar access is a "sensitive" scope and the app won't go
+   through Google's verification review, each person sees an **"Google hasn't verified this app"**
+   warning the first time they sign in. That's expected — it's not a security problem, just Google
+   flagging that nobody paid for a review. Click **Advanced → Go to \<app name\> (unsafe)** to
+   continue; it only asks once per Google account. No user cap applies to a small team like this.
 4. **Create an OAuth Client ID** — APIs & Services → Credentials → Create Credentials → OAuth
    client ID → Application type: **Web application**. Under "Authorized JavaScript origins," add:
    - `https://<your-github-username>.github.io` (your Pages URL's origin, no trailing path)
