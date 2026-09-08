@@ -45,6 +45,7 @@ function toSyncable(event: AgendaEvent): SyncableEvent {
     time: event.time,
     end_time: event.end_time,
     note: event.note,
+    type: event.type,
   }
 }
 

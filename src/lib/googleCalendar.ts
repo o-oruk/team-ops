@@ -1,9 +1,21 @@
 import { addOneHourCapped, toISODate } from './calendar'
 import { AMANA_CALENDAR_COLOR, AMANA_CALENDAR_DESCRIPTION, AMANA_CALENDAR_NAME } from './googleConfig'
+import type { DateType } from '../types'
 
 const CALENDAR_API_BASE = 'https://www.googleapis.com/calendar/v3'
 /** How many event writes are in flight at once. Enough to feel instant, gentle on Google's quota. */
 const CONCURRENCY = 8
+
+/**
+ * Google Calendar only accepts one of ~11 fixed colorIds per event — no arbitrary hex — so these
+ * are the closest matches to DATE_TYPE_COLOR (blue/green/red) from that fixed palette.
+ * Reference: https://developers.google.com/calendar/api/v3/reference/colors
+ */
+const DATE_TYPE_GOOGLE_COLOR_ID: Record<DateType, string> = {
+  meeting: '9', // Blueberry
+  event: '10', // Basil
+  deadline: '11', // Tomato
+}
 
 export interface SyncableEvent {
   /** The `important_dates` row ID — also what the Google event ID is derived from. */
@@ -13,6 +25,7 @@ export interface SyncableEvent {
   time: string | null
   end_time: string | null
   note: string | null
+  type: DateType
 }
 
 export type AddOutcome =
@@ -41,6 +54,7 @@ function buildEventResource(event: SyncableEvent) {
     summary: event.title,
     description: event.note ?? undefined,
     status: 'confirmed',
+    colorId: DATE_TYPE_GOOGLE_COLOR_ID[event.type],
   }
   if (event.time) {
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
