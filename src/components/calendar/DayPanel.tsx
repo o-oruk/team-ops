@@ -161,51 +161,53 @@ export function DayPanel({
             ) : (
               <li
                 key={event.id}
-                className={`flex items-center justify-between gap-2 rounded-lg border border-slate-200 py-2 pl-3 pr-3 ${
+                className={`flex flex-col gap-2 rounded-lg border border-slate-200 py-2 pl-3 pr-3 ${
                   isPastDay ? 'opacity-50' : ''
                 }`}
                 style={{ borderLeft: `4px solid ${DATE_TYPE_COLOR[event.type]}` }}
               >
-                <div className="flex items-start gap-2">
-                  <span
-                    className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: DATE_TYPE_COLOR[event.type] }}
-                  />
-                  <div>
-                    <p className="text-sm font-medium text-slate-800">
-                      {event.title}
-                      {event.time && (
-                        <span className="ml-1.5 font-normal text-slate-400">{formatTimeRange(event.time, event.end_time)}</span>
-                      )}
-                    </p>
-                    {event.note && <p className="text-xs text-slate-500">{event.note}</p>}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-start gap-2">
+                    <span
+                      className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: DATE_TYPE_COLOR[event.type] }}
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-slate-800">
+                        {event.title}
+                        {event.time && (
+                          <span className="ml-1.5 font-normal text-slate-400">{formatTimeRange(event.time, event.end_time)}</span>
+                        )}
+                      </p>
+                      {event.note && <p className="text-xs text-slate-500">{event.note}</p>}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button
+                      onClick={() => setEditingId(event.id)}
+                      className="rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm(`Delete "${event.title}"?`)) void onDeleteDate(event.id)
+                      }}
+                      className="rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-red-50 hover:text-red-600"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-1">
-                  <a
-                    href={googleQuickAddUrl(event)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title="Add to Google Calendar"
-                    className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-                  >
-                    <GoogleCalendarIcon className="h-4 w-4" />
-                  </a>
-                  <button
-                    onClick={() => setEditingId(event.id)}
-                    className="rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (confirm(`Delete "${event.title}"?`)) void onDeleteDate(event.id)
-                    }}
-                    className="rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-red-50 hover:text-red-600"
-                  >
-                    Delete
-                  </button>
-                </div>
+                <a
+                  href={googleQuickAddUrl(event)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex w-fit items-center gap-1.5 rounded-md border border-slate-200 py-1 pl-1.5 pr-2.5 text-xs font-medium text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                >
+                  <GoogleCalendarIcon className="h-4 w-4" />
+                  Add to Google Calendar
+                </a>
               </li>
             ),
           )}
