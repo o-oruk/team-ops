@@ -32,9 +32,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="sticky top-0 z-10">
         <Countdown />
         <header className="border-b border-slate-200 bg-white/90 backdrop-blur">
-          <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3">
             <div className="flex items-center gap-6">
-              <span className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+              <span className="flex shrink-0 items-center gap-2 whitespace-nowrap text-lg font-semibold text-slate-900">
                 <Logo size={24} />
                 Team Ops
               </span>
@@ -107,7 +107,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </NavLink>
               <button
                 onClick={signOut}
-                className="rounded-md px-2 py-1 text-sm text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                className="whitespace-nowrap rounded-md px-2 py-1 text-sm text-slate-500 hover:bg-slate-100 hover:text-slate-800"
               >
                 Log out
               </button>
@@ -115,7 +115,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </header>
       </div>
-      <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+      <main className="mx-auto max-w-6xl px-6 py-6">{children}</main>
     </div>
   )
 }
