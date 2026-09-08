@@ -1,10 +1,8 @@
 import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
-import { useGoogleCalendarSync } from '../hooks/useGoogleCalendarSync'
 import { useImportantDates } from '../hooks/useImportantDates'
 import { todayISO } from '../hooks/useTasks'
 import { DayPanel } from '../components/calendar/DayPanel'
-import { GoogleCalendarSync } from '../components/calendar/GoogleCalendarSync'
 import { MonthCalendar } from '../components/calendar/MonthCalendar'
 import { UpcomingList } from '../components/calendar/UpcomingList'
 import { startOfMonth, type AgendaEvent } from '../lib/calendar'
@@ -12,7 +10,6 @@ import { startOfMonth, type AgendaEvent } from '../lib/calendar'
 export function Calendar() {
   const { profile } = useAuth()
   const { dates, addDate, updateDate, deleteDate } = useImportantDates()
-  const googleSync = useGoogleCalendarSync()
   const today = todayISO()
 
   const [monthDate, setMonthDate] = useState(() => startOfMonth(new Date()))
@@ -43,10 +40,7 @@ export function Calendar() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-slate-900">Calendar</h1>
-        <GoogleCalendarSync sync={googleSync} events={events} today={today} />
-      </div>
+      <h1 className="text-lg font-semibold text-slate-900">Calendar</h1>
 
       <UpcomingList events={events} today={today} onJumpTo={jumpTo} />
 
@@ -65,16 +59,8 @@ export function Calendar() {
             date={selectedDate}
             events={eventsByDate.get(selectedDate) ?? []}
             onAddDate={(input) => addDate({ ...input, createdBy: profile.id })}
-            onUpdateDate={async (id, fields) => {
-              const updated = await updateDate(id, fields)
-              // Keep copies already in Google in step. Best-effort and silent — see pushEdit.
-              if (updated) void googleSync.pushEdit(updated)
-            }}
-            onDeleteDate={async (id) => {
-              // Must run first: the link rows cascade away with the important_dates row.
-              await googleSync.pushDelete(id)
-              await deleteDate(id)
-            }}
+            onUpdateDate={updateDate}
+            onDeleteDate={deleteDate}
           />
         )}
       </div>

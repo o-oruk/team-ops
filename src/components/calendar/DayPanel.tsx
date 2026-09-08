@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { addOneHourCapped, formatTimeRange, toISODate, type AgendaEvent } from '../../lib/calendar'
+import { googleQuickAddUrl } from '../../lib/googleQuickAdd'
 import { DATE_TYPE_COLOR, DATE_TYPE_LABEL, type DateType, type ImportantDate } from '../../types'
 import { DatePicker } from '../shared/DatePicker'
 import { TimeSelect } from '../shared/TimeSelect'
 import { AddDateModal } from './AddDateModal'
+import { GoogleCalendarIcon } from './GoogleCalendarIcon'
 
 const TYPES: DateType[] = ['event', 'meeting', 'deadline']
 
@@ -180,6 +182,15 @@ export function DayPanel({
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
+                  <a
+                    href={googleQuickAddUrl(event)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Add to Google Calendar"
+                    className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                  >
+                    <GoogleCalendarIcon className="h-4 w-4" />
+                  </a>
                   <button
                     onClick={() => setEditingId(event.id)}
                     className="rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-slate-100 hover:text-slate-700"

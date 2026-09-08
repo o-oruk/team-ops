@@ -2,10 +2,6 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import type { ImportantDate } from '../types'
 
-/**
- * The calendar entries themselves. Anything Google-related lives in useGoogleCalendarSync — an
- * entry existing here says nothing about whether it's been added to anyone's Google Calendar.
- */
 export function useImportantDates() {
   const [dates, setDates] = useState<ImportantDate[]>([])
   const [loading, setLoading] = useState(true)
@@ -13,7 +9,7 @@ export function useImportantDates() {
   async function load() {
     const { data } = await supabase.from('important_dates').select('*').order('date')
     // Postgres returns `time` columns as "14:30:00" — trim to "14:30" so every consumer (the
-    // 5-minute TimeSelect dropdown, Google event building) can assume one consistent format.
+    // 5-minute TimeSelect dropdown, the Google quick-add link) can assume one consistent format.
     setDates((data ?? []).map((d) => ({ ...d, time: d.time?.slice(0, 5) ?? null, end_time: d.end_time?.slice(0, 5) ?? null })))
     setLoading(false)
   }
@@ -51,16 +47,13 @@ export function useImportantDates() {
     await load()
   }
 
-  /** Returns the entry as it now stands, so callers can mirror the edit into Google Calendar. */
   async function updateDate(
     id: string,
     fields: Partial<Pick<ImportantDate, 'title' | 'date' | 'time' | 'end_time' | 'type' | 'note'>>,
-  ): Promise<ImportantDate | null> {
-    const existing = dates.find((d) => d.id === id)
+  ) {
     const { error } = await supabase.from('important_dates').update(fields).eq('id', id)
     if (error) throw error
     await load()
-    return existing ? { ...existing, ...fields } : null
   }
 
   async function deleteDate(id: string) {

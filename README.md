@@ -58,71 +58,20 @@ The Supabase **anon key is meant to be public** — it's safe to ship in the fro
 Row Level Security (enabled by the schema script) restricts what it can actually do. Never commit
 or expose your Supabase **service-role key** (you won't need it for this app).
 
-## Google Calendar setup (optional)
+## Adding an entry to Google Calendar
 
-Adds an **"Add to Google Calendar"** button to the Calendar screen. One press pushes every upcoming
-entry into an **"Amana Vision"** calendar in whichever Google account you pick — the same way
-Google's own "Work"/"Family" calendars keep things separable, so you can hide the whole lot with
-one tick box in Google Calendar. Skip this section and the app works fine without it: the button
-only appears once `VITE_GOOGLE_CLIENT_ID` is set.
+Every entry on the Calendar screen has a small Google Calendar icon next to its Edit/Delete
+buttons. Clicking it opens `calendar.google.com` in a new tab, pre-filled with that entry's title,
+date/time, and note — pick whichever Google account you want in Google's own account switcher, and
+click Save.
 
-1. **Create a Google Cloud project** at [console.cloud.google.com](https://console.cloud.google.com)
-   (any Google account works — it doesn't need to be a dedicated one).
-2. **Enable the Google Calendar API** — APIs & Services → Library → search "Google Calendar API" →
-   Enable.
-3. **Configure the OAuth consent screen** — APIs & Services → OAuth consent screen. User type:
-   External. Fill in an app name and support email. Under **Scopes**, add
-   `https://www.googleapis.com/auth/calendar` (create/manage calendars) plus `userinfo.email` and
-   `userinfo.profile` (so the account picker can show which account you're adding to). Then click
-   **Publish app** to move it out of "Testing" status.
+No setup, no OAuth client, no consent screen, nothing stored — it's just a link, so it works out of
+the box for everyone. The trade-off is that Google's link format has no parameter for event color,
+so the meeting/event/deadline color coding only exists on the dashboard; on Google Calendar, set it
+by hand with one click on the event's color swatch if you want it there too.
 
-   Publishing matters because "Testing" status only lets in Google accounts you've listed by email
-   as test users — there's no way to hand your teammates a working link without first collecting
-   everyone's Google address, defeating the point of letting each person pick their own account(s).
-   Publishing removes that allowlist: anyone can sign in.
-
-   The trade-off is that because calendar access is a "sensitive" scope and the app won't go
-   through Google's verification review, each person sees an **"Google hasn't verified this app"**
-   warning the first time they sign in. That's expected — it's not a security problem, just Google
-   flagging that nobody paid for a review. Click **Advanced → Go to \<app name\> (unsafe)** to
-   continue; it only asks once per Google account. No user cap applies to a small team like this.
-4. **Create an OAuth Client ID** — APIs & Services → Credentials → Create Credentials → OAuth
-   client ID → Application type: **Web application**. Under "Authorized JavaScript origins," add:
-   - `https://<your-github-username>.github.io` (your Pages URL's origin, no trailing path)
-   - `http://localhost:5173` (for local dev)
-
-   Save, then copy the **Client ID** (looks like `xxxxx.apps.googleusercontent.com`) — this is the
-   `VITE_GOOGLE_CLIENT_ID` value. There's no client secret to manage for this flow.
-5. **Set the env var** — locally in `.env`, and as a GitHub repo secret (same place as the Supabase
-   ones: Settings → Secrets and variables → Actions).
-
-There is no calendar to create or share by hand. The first time someone syncs, the app looks for a
-calendar named "Amana Vision" in the account they picked and creates one if it isn't there.
-
-### How it behaves
-
-- **The button.** Press it and every upcoming entry that isn't already on the chosen account's
-  calendar goes across at once — in parallel, not one at a time — with a running count while it
-  works.
-- **Multiple Google accounts.** The caret next to the button opens the account picker. "Use another
-  Google account" runs Google's own chooser; connected accounts are remembered in this browser and
-  each keeps its own separate "already added" state. Nothing about your Google accounts is stored
-  server-side beyond the account email attached to each sync record.
-- **Never added twice.** Two independent guards. The dashboard records which entries have gone to
-  which account (`google_calendar_links`), so a second press only pushes what's new. And the Google
-  event ID is derived from the dashboard row's own ID, so even if that record were lost, Google
-  itself rejects the duplicate rather than creating a second copy.
-- **Edits and deletes** are mirrored onto copies already in Google, quietly and only when the
-  browser still holds a valid Google token — nobody wants a sign-in popup for renaming an event. If
-  an edit can't get through, that entry simply reappears in the button's count so the next press
-  brings it back in line. A delete that can't get through leaves the Google copy behind; removing it
-  from Google Calendar directly is the fix.
-
-> **Upgrading from the old shared-calendar sync?** Entries pushed to the old shared
-> `VITE_GOOGLE_CALENDAR_ID` calendar count as un-added under the new per-account model, so the first
-> press will add them to your personal "Amana Vision" calendar. Delete the old shared calendar once
-> everyone has moved over. The `VITE_GOOGLE_CALENDAR_ID` env var and secret are no longer read and
-> can be removed.
+(`google_calendar_links` in the schema is unused leftover from an earlier bulk-sync version of this
+feature — harmless to leave, or drop the table if you'd rather clean it up.)
 
 ## Environment variables
 
@@ -130,7 +79,6 @@ calendar named "Amana Vision" in the account they picked and creates one if it i
 |---|---|---|
 | `VITE_SUPABASE_URL` | frontend, GitHub Actions secret | Yes |
 | `VITE_SUPABASE_ANON_KEY` | frontend, GitHub Actions secret | Yes (RLS enforces access) |
-| `VITE_GOOGLE_CLIENT_ID` | frontend, GitHub Actions secret (optional) | Yes (public OAuth client) |
 
 ## Deploying
 
@@ -154,9 +102,7 @@ See [`supabase/schema.sql`](./supabase/schema.sql) for the full schema. Summary:
   completion info. A day's points = sum of weights of tasks with that `completed_date`. There is
   no separate points table — everything on the Progress screen is derived live from this table.
 - `important_dates` — deadlines/milestones shown on the Calendar screen.
-- `google_calendar_links` — one row per (user, entry, Google account) already added to Google
-  Calendar. This is what stops the "Add to Google Calendar" button adding anything twice. Rows
-  are private to the user who made them (RLS), unlike the shared tables above.
+- `google_calendar_links` — unused; see the note in "Adding an entry to Google Calendar" above.
 
 ## Progress tracker legend
 
