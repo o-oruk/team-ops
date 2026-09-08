@@ -15,18 +15,8 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import nodemailer from 'npm:nodemailer@^9'
 
-const WEIGHT_LABELS: Record<number, string> = { 1: 'Small', 2: 'Medium', 3: 'Large' }
-const DASHBOARD_URL = 'https://o-oruk.github.io/team-ops/'
-
-// Matches tailwind.config.js's `accent` color and the app's slate palette, so the email reads as
-// the same product rather than a generic system notification.
-const ACCENT = '#4f46e5'
-const ACCENT_LIGHT = '#eef2ff'
-const SLATE_900 = '#0f172a'
-const SLATE_600 = '#475569'
-const SLATE_400 = '#94a3b8'
-const SLATE_200 = '#e2e8f0'
-const RED_600 = '#dc2626'
+const WEIGHT_LABELS: Record<number, string> = { 1: 'small', 2: 'medium', 3: 'large' }
+const RED = '#dc2626'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -63,79 +53,74 @@ function escapeHtml(value: string): string {
     .replace(/'/g, '&#39;')
 }
 
-/** "2026-09-15" -> "Tue, Sep 15" — email clients don't run JS, so this has to happen server-side. */
+function ordinalSuffix(day: number): string {
+  if (day >= 11 && day <= 13) return 'th'
+  switch (day % 10) {
+    case 1:
+      return 'st'
+    case 2:
+      return 'nd'
+    case 3:
+      return 'rd'
+    default:
+      return 'th'
+  }
+}
+
+/** "2026-09-08" -> "Wednesday, 8th of September, 2026" */
 function formatDate(iso: string): string {
   const date = new Date(`${iso}T00:00:00`)
-  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+  const weekday = date.toLocaleDateString('en-US', { weekday: 'long' })
+  const month = date.toLocaleDateString('en-US', { month: 'long' })
+  const day = date.getDate()
+  return `${weekday}, ${day}${ordinalSuffix(day)} of ${month}, ${date.getFullYear()}`
+}
+
+/**
+ * "you" / "you and John" / "you, John, and Michael" — always built from every current assignee on
+ * the task (not just whoever's newly added in this call), so a task someone's already sharing with
+ * two teammates still reads as shared even when a third person is the one just being added.
+ */
+function joinWithYou(otherNames: string[]): string {
+  if (otherNames.length === 0) return 'you'
+  if (otherNames.length === 1) return `you and ${otherNames[0]}`
+  return `you, ${otherNames.slice(0, -1).join(', ')}, and ${otherNames[otherNames.length - 1]}`
 }
 
 interface EmailContext {
   assigneeName: string
-  actingName: string
+  peoplePhrase: string
   taskTitle: string
   weightLabel: string
-  objectiveTitle: string | null
   dueDate: string | null
 }
 
 function buildPlainText(ctx: EmailContext): string {
-  return [
-    `Hi ${ctx.assigneeName || 'there'},`,
+  const lines = [
+    `Hi ${ctx.assigneeName || 'there'}!`,
     '',
-    `${ctx.actingName} assigned you a task on the Amana Vision dashboard:`,
+    `A task has been assigned to ${ctx.peoplePhrase} on TeamOps: ${ctx.taskTitle}.`,
     '',
-    ctx.taskTitle,
-    `Size: ${ctx.weightLabel}`,
-    ctx.objectiveTitle ? `Objective: ${ctx.objectiveTitle}` : null,
-    ctx.dueDate ? `Due: ${formatDate(ctx.dueDate)}` : null,
+    ctx.dueDate
+      ? `This is a ${ctx.weightLabel} task, and is due on ${formatDate(ctx.dueDate)}.`
+      : `This is a ${ctx.weightLabel} task.`,
     '',
-    DASHBOARD_URL,
+    'Thank you :)',
   ]
-    .filter((line): line is string => line !== null)
-    .join('\n')
-}
-
-function detailRow(label: string, value: string, opts?: { color?: string; borderTop?: boolean }): string {
-  const border = opts?.borderTop ? `border-top:1px solid ${SLATE_200};` : ''
-  const color = opts?.color ?? SLATE_900
-  return `
-    <tr>
-      <td style="padding:10px 0;font-size:13px;color:${SLATE_400};${border}">${label}</td>
-      <td style="padding:10px 0;font-size:13px;font-weight:600;color:${color};text-align:right;${border}">${value}</td>
-    </tr>`
+  return lines.join('\n')
 }
 
 function buildHtml(ctx: EmailContext): string {
-  const rows = [
-    detailRow('Size', escapeHtml(ctx.weightLabel)),
-    ctx.objectiveTitle ? detailRow('Objective', escapeHtml(ctx.objectiveTitle), { borderTop: true }) : '',
-    ctx.dueDate ? detailRow('Due', formatDate(ctx.dueDate), { color: RED_600, borderTop: true }) : '',
-  ].join('')
+  const dueSentence = ctx.dueDate
+    ? `This is a ${escapeHtml(ctx.weightLabel)} task, and is due on <strong>${formatDate(ctx.dueDate)}</strong>.`
+    : `This is a ${escapeHtml(ctx.weightLabel)} task.`
 
   return `
-<div style="background-color:#f8fafc;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-  <div style="max-width:480px;margin:0 auto;background-color:#ffffff;border-radius:12px;overflow:hidden;border:1px solid ${SLATE_200};">
-    <div style="background-color:${ACCENT};padding:18px 24px;">
-      <span style="color:#ffffff;font-size:15px;font-weight:700;letter-spacing:0.2px;">Amana Vision</span>
-    </div>
-    <div style="padding:28px 24px;">
-      <p style="margin:0 0 4px;font-size:14px;color:${SLATE_600};">
-        Hi ${escapeHtml(ctx.assigneeName || 'there')},
-      </p>
-      <p style="margin:0 0 20px;font-size:14px;color:${SLATE_600};">
-        <strong style="color:${SLATE_900};">${escapeHtml(ctx.actingName)}</strong> assigned you a task:
-      </p>
-      <p style="margin:0 0 18px;padding:14px 16px;background-color:${ACCENT_LIGHT};border-radius:8px;font-size:16px;font-weight:700;color:${SLATE_900};">
-        ${escapeHtml(ctx.taskTitle)}
-      </p>
-      <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
-        ${rows}
-      </table>
-      <a href="${DASHBOARD_URL}" style="display:inline-block;background-color:${ACCENT};color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;padding:11px 22px;border-radius:8px;">
-        Open dashboard
-      </a>
-    </div>
-  </div>
+<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#000000;line-height:1.5;">
+  <p>Hi ${escapeHtml(ctx.assigneeName || 'there')}!</p>
+  <p>A task has been assigned to ${escapeHtml(ctx.peoplePhrase)} on TeamOps: <span style="color:${RED};">${escapeHtml(ctx.taskTitle)}</span>.</p>
+  <p>${dueSentence}</p>
+  <p>Thank you :)</p>
 </div>`
 }
 
@@ -152,7 +137,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { taskId, assigneeProfileIds, actingProfileId } = (await req.json()) as RequestBody
+    const { taskId, assigneeProfileIds } = (await req.json()) as RequestBody
     if (!taskId || !Array.isArray(assigneeProfileIds) || assigneeProfileIds.length === 0) {
       return Response.json(
         { error: 'taskId and a non-empty assigneeProfileIds array are required' },
@@ -162,38 +147,54 @@ Deno.serve(async (req) => {
 
     const { data: task, error: taskError } = await supabase
       .from('tasks')
-      .select('title, weight, due_date, objectives(title)')
+      .select('title, weight, due_date')
       .eq('id', taskId)
       .single()
     if (taskError || !task) throw new Error(taskError?.message ?? 'Task not found')
 
-    const { data: assignees, error: assigneesError } = await supabase
+    // Every current assignee on the task, not just the ones this particular call is notifying —
+    // that's what lets the email correctly say "you, John, and Michael" for a task someone else
+    // already shared, even when only one new person is being added right now.
+    const { data: roster, error: rosterError } = await supabase
+      .from('task_assignees')
+      .select('profile_id, profiles(name)')
+      .eq('task_id', taskId)
+    if (rosterError) throw new Error(rosterError.message)
+
+    const nameById = new Map<string, string>()
+    for (const row of roster ?? []) {
+      const name = (row.profiles as { name: string } | null)?.name
+      if (name) nameById.set(row.profile_id as string, name)
+    }
+
+    const { data: recipients, error: recipientsError } = await supabase
       .from('profiles')
       .select('id, name, email')
       .in('id', assigneeProfileIds)
-    if (assigneesError) throw new Error(assigneesError.message)
-
-    let actingName = 'Someone'
-    if (actingProfileId) {
-      const { data: actor } = await supabase.from('profiles').select('name').eq('id', actingProfileId).single()
-      if (actor?.name) actingName = actor.name
-    }
-
-    const objectiveTitle = (task.objectives as { title: string } | null)?.title ?? null
+    if (recipientsError) throw new Error(recipientsError.message)
 
     const outcomes = await Promise.allSettled(
-      (assignees ?? [])
-        .filter((a): a is { id: string; name: string; email: string } => !!a.email)
-        .map((assignee) => {
+      (recipients ?? [])
+        .filter((r): r is { id: string; name: string; email: string } => !!r.email)
+        .map((recipient) => {
+          const otherNames = [...nameById.entries()]
+            .filter(([id]) => id !== recipient.id)
+            .map(([, name]) => name)
+            .sort((a, b) => a.localeCompare(b))
+
           const ctx: EmailContext = {
-            assigneeName: assignee.name,
-            actingName,
+            assigneeName: recipient.name,
+            peoplePhrase: joinWithYou(otherNames),
             taskTitle: task.title,
             weightLabel: WEIGHT_LABELS[task.weight] ?? String(task.weight),
-            objectiveTitle,
             dueDate: task.due_date,
           }
-          return sendMail(assignee.email, `New task assigned: ${task.title}`, buildPlainText(ctx), buildHtml(ctx))
+          return sendMail(
+            recipient.email,
+            `New Task – Amana Vision: ${task.title}`,
+            buildPlainText(ctx),
+            buildHtml(ctx),
+          )
         }),
     )
 
