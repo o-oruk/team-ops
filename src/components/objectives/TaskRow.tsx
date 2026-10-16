@@ -78,21 +78,32 @@ export function TaskRow({
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Translate.toString(transform), transition }}
-      {...dragListeners}
-      className={`group/row relative flex flex-wrap items-center gap-3 rounded-lg border px-4 py-3 ${
+      className={`group/row relative flex flex-wrap items-center gap-3 rounded-lg border px-4 py-3 transition-[border-color,box-shadow] ${
         isOverdue ? 'border-red-200 bg-red-50' : 'border-slate-200 bg-white'
-      } ${draggable ? 'select-none' : ''} ${isDragging ? 'z-30 cursor-grabbing shadow-lg ring-2 ring-accent/40' : ''}`}
+      } ${
+        draggable
+          ? 'select-none hover:border-slate-300 hover:shadow-sm has-[.drag-zone:hover]:border-accent has-[.drag-zone:hover]:shadow-md'
+          : ''
+      } ${isDragging ? 'z-30 cursor-grabbing shadow-lg ring-2 ring-accent/40' : ''}`}
     >
-      {draggable && (
-        <span
-          aria-hidden="true"
-          title="Hold and drag to reorder"
-          className="absolute left-1 top-1/2 -translate-y-1/2 text-[10px] leading-none tracking-[-2px] text-slate-300 opacity-0 transition-opacity group-hover/row:opacity-100"
-        >
-          ⋮⋮
-        </span>
-      )}
-      <div className="min-w-[160px] flex-1">
+      {/* The left side (grip + task text) is the drag handle; the editing fields on the right never start a drag. */}
+      <div
+        {...dragListeners}
+        title={draggable ? 'Hold and drag to reorder' : undefined}
+        className={`min-w-[160px] flex-1 ${
+          draggable
+            ? 'drag-zone group/zone -my-3 -ml-4 flex cursor-grab flex-col justify-center self-stretch rounded-l-lg py-3 pl-4 transition-colors hover:bg-accent-light/70'
+            : ''
+        }`}
+      >
+        {draggable && (
+          <span
+            aria-hidden="true"
+            className="absolute left-1 top-1/2 -translate-y-1/2 text-[10px] leading-none tracking-[-2px] text-slate-300 opacity-0 transition-opacity group-hover/row:opacity-100 group-hover/zone:text-accent"
+          >
+            ⋮⋮
+          </span>
+        )}
         {editing ? (
           <input
             autoFocus
@@ -105,7 +116,10 @@ export function TaskRow({
         ) : isDone ? (
           <span className="text-sm text-slate-400 line-through">{task.title}</span>
         ) : (
-          <button onClick={() => setEditing(true)} className="text-left text-sm text-slate-800">
+          <button
+            onClick={() => setEditing(true)}
+            className={`text-left text-sm text-slate-800 ${draggable ? 'cursor-grab' : ''}`}
+          >
             {task.title}
           </button>
         )}

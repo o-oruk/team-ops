@@ -1,5 +1,14 @@
 import { useEffect, useState } from 'react'
-import { DndContext, MouseSensor, TouchSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
+import {
+  DndContext,
+  MouseSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type CollisionDetection,
+  type DragEndEvent,
+} from '@dnd-kit/core'
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
 import { useAuth } from '../hooks/useAuth'
@@ -82,6 +91,17 @@ export function Board() {
     else pendingGroups.push([task])
   }
   const doneTasks = activeTasks.filter((t) => t.status === 'done')
+
+  // Only tasks in the dragged task's own day group count as drop targets. Otherwise, near the end of
+  // a group the first task of the next group can win as "closest", and the drop gets rejected.
+  const collisionDetection: CollisionDetection = (args) => {
+    const group = pendingGroups.find((g) => g.some((t) => t.id === args.active.id))
+    const ids = new Set(group?.map((t) => t.id))
+    return closestCenter({
+      ...args,
+      droppableContainers: args.droppableContainers.filter((c) => ids.has(String(c.id))),
+    })
+  }
 
   function handleDragEnd({ active, over }: DragEndEvent) {
     if (!over || active.id === over.id) return
@@ -179,7 +199,7 @@ export function Board() {
       ) : (
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCenter}
+          collisionDetection={collisionDetection}
           modifiers={[restrictToVerticalAxis]}
           onDragEnd={handleDragEnd}
         >
