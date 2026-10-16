@@ -4,8 +4,6 @@ import type { Task } from '../types'
 // counts toward the Progress page; that history lives on the Sprints page instead.
 export const OPS_START = '2026-10-16'
 
-// How far back the ongoing Progress heatmap looks.
-export const PROGRESS_WINDOW_DAYS = 182
 
 export type PointLevel = 'future' | 'not-joined' | 'red' | 'orange' | 'yellow' | 'green'
 
@@ -16,16 +14,20 @@ export function todayISO() {
   return new Date().toLocaleDateString('en-CA')
 }
 
-/** `date` shifted by `days` (negative = earlier), as YYYY-MM-DD. */
-export function addDays(date: string, days: number) {
-  const d = new Date(date + 'T00:00:00')
-  d.setDate(d.getDate() + days)
-  return d.toLocaleDateString('en-CA')
-}
-
-/** Ongoing Progress window: the last PROGRESS_WINDOW_DAYS days, ending today. */
-export function opsDateRange(today: string): string[] {
-  return dateRange(addDays(today, -(PROGRESS_WINDOW_DAYS - 1)), today)
+/**
+ * The Progress window: the calendar quarter containing `today`, except that the first quarter
+ * starts at OPS_START rather than before it (that time belongs to the archived sprint).
+ */
+export function currentQuarter(today: string): { label: string; start: string; end: string } {
+  const [year, month] = today.split('-').map(Number)
+  const q = Math.floor((month - 1) / 3) // 0-3
+  const quarterStart = new Date(year, q * 3, 1).toLocaleDateString('en-CA')
+  const end = new Date(year, q * 3 + 3, 0).toLocaleDateString('en-CA')
+  return {
+    label: `Q${q + 1} ${year}`,
+    start: quarterStart < OPS_START ? OPS_START : quarterStart,
+    end,
+  }
 }
 
 export function dateRange(start: string, end: string): string[] {

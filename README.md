@@ -1,7 +1,7 @@
 # Team Ops Dashboard
 
 Internal operations tool for the team. Tracks the company's ongoing objectives, daily to-dos, and
-a progress tracker that shows how consistently the team is executing. Built for four people — not
+a progress tracker (one quarter at a time) that shows how consistently the team is executing. Built for four people — not
 a customer-facing product.
 
 It started life as the execution tool for the Sheraa validation sprint (Aug 17 – Oct 15, 2026).
@@ -14,7 +14,7 @@ GitHub Pages via GitHub Actions.
 
 - **Roadmap** — the active objectives as tabs, each with its own task backlog.
 - **Tasks** — today's to-do list, a "Mine" and "Team" view of the same underlying tasks.
-- **Progress** — a GitHub-style heatmap of daily execution over the last 6 months, team-wide and
+- **Progress** — a GitHub-style heatmap of daily execution for the current quarter, team-wide and
   per teammate.
 - **Calendar** — important dates and scheduled tasks, chronologically.
 - **Team** / **Chat** — teammate profiles and a shared chat.
