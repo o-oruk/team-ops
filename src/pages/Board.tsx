@@ -9,20 +9,11 @@ import { useTasks } from '../hooks/useTasks'
 import { ObjectiveTabs } from '../components/objectives/ObjectiveTabs'
 import { TaskForm } from '../components/objectives/TaskForm'
 import { TaskRow } from '../components/objectives/TaskRow'
+import { byManualOrder } from '../lib/taskOrder'
 import type { Task } from '../types'
 
 /** Pending tasks can only be reordered among others due the same day (undated tasks count as one day). */
 const dayKey = (task: Task) => task.due_date ?? 'undated'
-
-/** Same-day order: tasks never dragged (newest first) sit above ones given a position by dragging. */
-function byManualOrder(a: Task, b: Task) {
-  const aPos = a.position ?? null
-  const bPos = b.position ?? null
-  if (aPos === null && bPos === null) return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  if (aPos === null) return -1
-  if (bPos === null) return 1
-  return aPos - bPos
-}
 
 export function Board() {
   const { profile } = useAuth()

@@ -5,6 +5,7 @@ import { usePresence } from '../hooks/usePresence'
 import { useProfiles } from '../hooks/useProfiles'
 import { useTasks, todayISO } from '../hooks/useTasks'
 import { joinNames } from '../lib/progress'
+import { byManualOrder } from '../lib/taskOrder'
 import { Avatar } from '../components/layout/Avatar'
 import { DailyTaskCard } from '../components/daily/DailyTaskCard'
 import type { Task } from '../types'
@@ -33,11 +34,15 @@ export function Daily() {
   const completedToday = tasks.filter((t) => t.status === 'done' && t.completed_date === today)
   // Order by actual closeness to deadline (due_date), not by when a task was pushed to today's
   // list — a task pushed early for a later due date should sort after ones truly due sooner.
+  // Same deadline: grouped by objective, then in the order they were dragged into on the Roadmap.
   const deadlineKey = (t: Task) => t.due_date ?? referenceDate(t) ?? ''
+  const objectivePosition = (t: Task) => objectives.find((o) => o.id === t.objective_id)?.position ?? 0
   const pending = [...overdue, ...dueToday].sort((a, b) => {
     const ak = deadlineKey(a)
     const bk = deadlineKey(b)
-    return ak < bk ? -1 : ak > bk ? 1 : 0
+    if (ak !== bk) return ak < bk ? -1 : 1
+    if (a.objective_id !== b.objective_id) return objectivePosition(a) - objectivePosition(b)
+    return byManualOrder(a, b)
   })
 
   const visible =
@@ -71,6 +76,11 @@ export function Daily() {
 
   function canComplete(task: Task) {
     return task.assignee_ids.length === 0 || (!!profile && task.assignee_ids.includes(profile.id))
+  }
+
+  /** The task's other assignees, besides the person whose list it's showing on. */
+  function sharedWith(task: Task, listOwnerId: string | undefined) {
+    return profiles.filter((p) => task.assignee_ids.includes(p.id) && p.id !== listOwnerId)
   }
 
   function completedByLabel(task: Task) {
@@ -117,6 +127,8 @@ export function Daily() {
               completedByLabel={completedByLabel(task)}
               onComplete={() => (profile ? completeTask(task.id, profile.id) : Promise.resolve())}
               onReturnToBacklog={canRemoveFromToday(task) ? () => returnToBacklog(task.id) : undefined}
+              sharedWith={sharedWith(task, profile?.id)}
+              viewerId={profile?.id}
             />
           ))}
         </ul>
@@ -146,6 +158,8 @@ export function Daily() {
                       completedByLabel={completedByLabel(task)}
                       onComplete={() => (profile ? completeTask(task.id, profile.id) : Promise.resolve())}
                       onReturnToBacklog={canRemoveFromToday(task) ? () => returnToBacklog(task.id) : undefined}
+                      sharedWith={assigneeId === 'unassigned' ? [] : sharedWith(task, assigneeId)}
+                      viewerId={profile?.id}
                     />
                   ))}
                 </ul>
