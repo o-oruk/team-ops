@@ -14,7 +14,7 @@ import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
 import { useAuth } from '../hooks/useAuth'
 import { useObjectives } from '../hooks/useObjectives'
 import { useProfiles } from '../hooks/useProfiles'
-import { useTasks } from '../hooks/useTasks'
+import { todayISO, useTasks } from '../hooks/useTasks'
 import { ObjectiveTabs } from '../components/objectives/ObjectiveTabs'
 import { TaskForm } from '../components/objectives/TaskForm'
 import { TaskRow } from '../components/objectives/TaskRow'
@@ -23,6 +23,33 @@ import type { Task } from '../types'
 
 /** Pending tasks can only be reordered among others due the same day (undated tasks count as one day). */
 const dayKey = (task: Task) => task.due_date ?? 'undated'
+
+/** A labeled full-width rule between groups of tasks, so different days never blur together. */
+function DayDivider({ label, tone = 'normal' }: { label: string; tone?: 'normal' | 'overdue' | 'muted' }) {
+  const color = tone === 'overdue' ? 'text-red-600' : tone === 'muted' ? 'text-slate-400' : 'text-slate-600'
+  const line = tone === 'overdue' ? 'bg-red-200' : 'bg-slate-300'
+  return (
+    <li aria-hidden="true" className="flex items-center gap-3 pt-4 first:pt-0">
+      <span className={`shrink-0 text-xs font-semibold uppercase tracking-wide ${color}`}>{label}</span>
+      <div className={`h-px flex-1 ${line}`} />
+    </li>
+  )
+}
+
+function dayLabel(dueDate: string | null, today: string) {
+  if (!dueDate) return 'No deadline'
+  const formatted = new Date(dueDate + 'T00:00:00').toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  })
+  if (dueDate === today) return `Today · ${formatted}`
+  if (dueDate < today) return `Overdue · ${formatted}`
+  const tomorrow = new Date(today + 'T00:00:00')
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  if (dueDate === tomorrow.toLocaleDateString('en-CA')) return `Tomorrow · ${formatted}`
+  return formatted
+}
 
 export function Board() {
   const { profile } = useAuth()
@@ -76,6 +103,8 @@ export function Board() {
         : `Delete "${objTitle}"?`
     if (confirm(message)) await deleteObjective(id)
   }
+
+  const today = todayISO()
 
   // Hold ~0.2s before a drag starts, so clicks, typing and touch-scrolling still work normally.
   const sensors = useSensors(
@@ -210,9 +239,14 @@ export function Board() {
                 items={group.map((t) => t.id)}
                 strategy={verticalListSortingStrategy}
               >
+                <DayDivider
+                  label={dayLabel(group[0].due_date, today)}
+                  tone={group[0].due_date && group[0].due_date < today ? 'overdue' : 'normal'}
+                />
                 {group.map((task) => renderRow(task, group.length > 1))}
               </SortableContext>
             ))}
+            {doneTasks.length > 0 && <DayDivider label="Completed" tone="muted" />}
             {doneTasks.map((task) => renderRow(task, false))}
           </ul>
         </DndContext>
