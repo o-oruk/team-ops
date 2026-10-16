@@ -39,6 +39,8 @@ export interface Task {
   status: TaskStatus
   scheduled_date: string | null
   due_date: string | null
+  /** Manual order among pending tasks due the same day; null = not reordered yet (newest first). */
+  position?: number | null
   completed_by: string | null
   completed_date: string | null
   created_by: string | null

@@ -119,6 +119,19 @@ export function useTasks() {
     await load()
   }
 
+  /** Saves a new drag order for a group of tasks: each gets its index in `orderedIds` as its position. */
+  async function reorderTasks(orderedIds: string[]) {
+    const positionOf = new Map(orderedIds.map((id, i) => [id, i]))
+    // Show the new order immediately rather than snapping back while the writes are in flight.
+    setTasks((prev) => prev.map((t) => (positionOf.has(t.id) ? { ...t, position: positionOf.get(t.id) } : t)))
+    const results = await Promise.all(
+      orderedIds.map((id, position) => supabase.from('tasks').update({ position }).eq('id', id)),
+    )
+    const failed = results.find((r) => r.error)
+    if (failed) console.warn('Saving task order failed:', failed.error)
+    await load()
+  }
+
   async function deleteTask(id: string) {
     const { error } = await supabase.from('tasks').delete().eq('id', id)
     if (error) throw error
@@ -178,6 +191,7 @@ export function useTasks() {
     addTask,
     updateTask,
     updateAssignees,
+    reorderTasks,
     deleteTask,
     pushToDaily,
     returnToBacklog,

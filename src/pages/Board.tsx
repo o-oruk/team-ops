@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react'
+import { DndContext, MouseSensor, TouchSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
+import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
 import { useAuth } from '../hooks/useAuth'
 import { useObjectives } from '../hooks/useObjectives'
 import { useProfiles } from '../hooks/useProfiles'
@@ -6,12 +9,26 @@ import { useTasks } from '../hooks/useTasks'
 import { ObjectiveTabs } from '../components/objectives/ObjectiveTabs'
 import { TaskForm } from '../components/objectives/TaskForm'
 import { TaskRow } from '../components/objectives/TaskRow'
+import type { Task } from '../types'
+
+/** Pending tasks can only be reordered among others due the same day (undated tasks count as one day). */
+const dayKey = (task: Task) => task.due_date ?? 'undated'
+
+/** Same-day order: tasks never dragged (newest first) sit above ones given a position by dragging. */
+function byManualOrder(a: Task, b: Task) {
+  const aPos = a.position ?? null
+  const bPos = b.position ?? null
+  if (aPos === null && bPos === null) return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  if (aPos === null) return -1
+  if (bPos === null) return 1
+  return aPos - bPos
+}
 
 export function Board() {
   const { profile } = useAuth()
   const { activeObjectives: objectives, addObjective, renameObjective, deleteObjective } = useObjectives()
   const { profiles } = useProfiles()
-  const { tasks, addTask, updateTask, updateAssignees, deleteTask, pushToDaily, reopenTask, updateCompletedDate } =
+  const { tasks, addTask, updateTask, updateAssignees, reorderTasks, deleteTask, pushToDaily, reopenTask, updateCompletedDate } =
     useTasks()
   const [activeId, setActiveId] = useState<string | null>(null)
 
@@ -31,10 +48,11 @@ export function Board() {
 
       if (!aDone) {
         // Pending tasks: earliest deadline first, undated tasks fall to the end of this group.
-        if (a.due_date && b.due_date) return a.due_date.localeCompare(b.due_date)
+        if (a.due_date && b.due_date && a.due_date !== b.due_date) return a.due_date.localeCompare(b.due_date)
+        if (a.due_date && b.due_date) return byManualOrder(a, b)
         if (a.due_date) return -1
         if (b.due_date) return 1
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        return byManualOrder(a, b)
       }
 
       // Completed tasks: most recently completed first.
@@ -57,6 +75,56 @@ export function Board() {
         ? `Delete "${objTitle}"? This will also permanently delete its ${count} task${count === 1 ? '' : 's'}.`
         : `Delete "${objTitle}"?`
     if (confirm(message)) await deleteObjective(id)
+  }
+
+  // Hold ~0.2s before a drag starts, so clicks, typing and touch-scrolling still work normally.
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
+  )
+
+  const pendingGroups: Task[][] = []
+  for (const task of activeTasks) {
+    if (task.status === 'done') continue
+    const last = pendingGroups[pendingGroups.length - 1]
+    if (last && dayKey(last[0]) === dayKey(task)) last.push(task)
+    else pendingGroups.push([task])
+  }
+  const doneTasks = activeTasks.filter((t) => t.status === 'done')
+
+  function handleDragEnd({ active, over }: DragEndEvent) {
+    if (!over || active.id === over.id) return
+    const group = pendingGroups.find((g) => g.some((t) => t.id === active.id))
+    if (!group || !group.some((t) => t.id === over.id)) return // different day: not allowed
+    const ids = group.map((t) => t.id)
+    void reorderTasks(arrayMove(ids, ids.indexOf(String(active.id)), ids.indexOf(String(over.id))))
+  }
+
+  function renderRow(task: Task, draggable: boolean) {
+    return (
+      <TaskRow
+        key={task.id}
+        task={task}
+        profiles={profiles}
+        draggable={draggable}
+        onUpdate={(fields) => updateTask(task.id, fields)}
+        onApplyAssignees={(addedIds, removedIds) => {
+          if (addedIds.length > 0) {
+            const names = addedIds.map((id) => profiles.find((p) => p.id === id)?.name || 'This person')
+            const nameList =
+              names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
+            if (!confirm(`${nameList} will get an email saying they've been assigned "${task.title}". Continue?`)) {
+              return
+            }
+          }
+          void updateAssignees(task.id, addedIds, removedIds, profile?.id)
+        }}
+        onDelete={() => deleteTask(task.id)}
+        onPushToDaily={() => pushToDaily(task.id)}
+        onReopen={() => reopenTask(task)}
+        onUpdateCompletedDate={(date) => updateCompletedDate(task.id, date)}
+      />
+    )
   }
 
   const isAdmin = profile?.role === 'admin'
@@ -118,31 +186,25 @@ export function Board() {
           This bucket is empty. Add a task above to start building the roadmap for this objective.
         </div>
       ) : (
-        <ul className="space-y-2">
-          {activeTasks.map((task) => (
-            <TaskRow
-              key={task.id}
-              task={task}
-              profiles={profiles}
-              onUpdate={(fields) => updateTask(task.id, fields)}
-              onApplyAssignees={(addedIds, removedIds) => {
-                if (addedIds.length > 0) {
-                  const names = addedIds.map((id) => profiles.find((p) => p.id === id)?.name || 'This person')
-                  const nameList =
-                    names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
-                  if (!confirm(`${nameList} will get an email saying they've been assigned "${task.title}". Continue?`)) {
-                    return
-                  }
-                }
-                void updateAssignees(task.id, addedIds, removedIds, profile?.id)
-              }}
-              onDelete={() => deleteTask(task.id)}
-              onPushToDaily={() => pushToDaily(task.id)}
-              onReopen={() => reopenTask(task)}
-              onUpdateCompletedDate={(date) => updateCompletedDate(task.id, date)}
-            />
-          ))}
-        </ul>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          modifiers={[restrictToVerticalAxis]}
+          onDragEnd={handleDragEnd}
+        >
+          <ul className="space-y-2">
+            {pendingGroups.map((group) => (
+              <SortableContext
+                key={dayKey(group[0])}
+                items={group.map((t) => t.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {group.map((task) => renderRow(task, group.length > 1))}
+              </SortableContext>
+            ))}
+            {doneTasks.map((task) => renderRow(task, false))}
+          </ul>
+        </DndContext>
       )}
     </div>
   )

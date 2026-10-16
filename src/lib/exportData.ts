@@ -5,7 +5,7 @@ import { supabase } from './supabase'
  * Bump this whenever a table/column included below changes shape, so a future import feature (and
  * anyone reading an old export) can tell which layout a given .zip was written against.
  */
-const SCHEMA_VERSION = 2 // 2: added sprints + objectives.sprint_id
+const SCHEMA_VERSION = 3 // 2: added sprints + objectives.sprint_id; 3: added tasks.position
 
 type Row = Record<string, unknown>
 
@@ -40,6 +40,7 @@ const COLUMNS = {
     'status',
     'scheduled_date',
     'due_date',
+    'position',
     'completed_by',
     'completed_date',
     'created_by',

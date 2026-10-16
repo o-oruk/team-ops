@@ -147,6 +147,7 @@ See [`supabase/schema.sql`](./supabase/schema.sql) for the full schema. Summary:
 - `tasks` — every task, with weight (1/2/3), assignee, status (`backlog` / `daily` / `done`), and
   completion info. A day's points = sum of weights of tasks with that `completed_date`. There is
   no separate points table — everything on the Progress screen is derived live from this table.
+  `position` holds the drag order among pending tasks in a bucket that share a due date.
 - `important_dates` — deadlines/milestones shown on the Calendar screen.
 - `google_calendar_links` — unused; see the note in "Adding an entry to Google Calendar" above.
 

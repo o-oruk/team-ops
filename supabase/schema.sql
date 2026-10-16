@@ -45,11 +45,15 @@ create table if not exists tasks (
   status text not null default 'backlog' check (status in ('backlog', 'daily', 'done')),
   scheduled_date date,
   due_date date,
+  position int,
   completed_by uuid references profiles (id) on delete set null,
   completed_date date,
   created_by uuid references profiles (id) on delete set null,
   created_at timestamptz not null default now()
 );
+
+-- Manual drag order among a bucket's pending tasks that share a due date. Added after launch.
+alter table tasks add column if not exists position int;
 
 -- A task can have zero or more assignees.
 create table if not exists task_assignees (

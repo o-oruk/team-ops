@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useState, type SyntheticEvent } from 'react'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import type { Profile, Task } from '../../types'
 import { DatePicker } from '../shared/DatePicker'
 import { Avatar } from '../layout/Avatar'
@@ -25,6 +27,7 @@ export function TaskRow({
   onPushToDaily,
   onReopen,
   onUpdateCompletedDate,
+  draggable = false,
 }: {
   task: Task
   profiles: Profile[]
@@ -34,7 +37,24 @@ export function TaskRow({
   onPushToDaily: () => Promise<void>
   onReopen: () => Promise<void>
   onUpdateCompletedDate: (date: string) => Promise<void>
+  /** Press-and-hold to drag this row among the other tasks in its SortableContext. */
+  draggable?: boolean
 }) {
+  const { setNodeRef, listeners, transform, transition, isDragging } = useSortable({
+    id: task.id,
+    disabled: !draggable,
+  })
+  // Typing in a field or using an open picker should never pick the row up.
+  const dragListeners = Object.fromEntries(
+    Object.entries(listeners ?? {}).map(([event, handler]) => [
+      event,
+      (e: SyntheticEvent) => {
+        if ((e.target as Element).closest('input, textarea, select, [data-no-drag]')) return
+        handler(e)
+      },
+    ]),
+  )
+
   const [editing, setEditing] = useState(false)
   const [title, setTitle] = useState(task.title)
   const [editingCompletedDate, setEditingCompletedDate] = useState(false)
@@ -56,10 +76,22 @@ export function TaskRow({
 
   return (
     <li
-      className={`flex flex-wrap items-center gap-3 rounded-lg border px-4 py-3 ${
+      ref={setNodeRef}
+      style={{ transform: CSS.Translate.toString(transform), transition }}
+      {...dragListeners}
+      className={`group/row relative flex flex-wrap items-center gap-3 rounded-lg border px-4 py-3 ${
         isOverdue ? 'border-red-200 bg-red-50' : 'border-slate-200 bg-white'
-      }`}
+      } ${draggable ? 'select-none' : ''} ${isDragging ? 'z-30 cursor-grabbing shadow-lg ring-2 ring-accent/40' : ''}`}
     >
+      {draggable && (
+        <span
+          aria-hidden="true"
+          title="Hold and drag to reorder"
+          className="absolute left-1 top-1/2 -translate-y-1/2 text-[10px] leading-none tracking-[-2px] text-slate-300 opacity-0 transition-opacity group-hover/row:opacity-100"
+        >
+          ⋮⋮
+        </span>
+      )}
       <div className="min-w-[160px] flex-1">
         {editing ? (
           <input

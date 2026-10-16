@@ -78,7 +78,7 @@ export function AssigneePicker({
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-20 mt-1 w-44 rounded-lg border border-slate-200 bg-white p-1.5 shadow-lg">
+        <div data-no-drag className="absolute left-0 top-full z-20 mt-1 w-44 rounded-lg border border-slate-200 bg-white p-1.5 shadow-lg">
           <button
             type="button"
             onClick={() => setPending([])}
