@@ -1,21 +1,21 @@
 /**
  * Hand-tuned objective colors. A single HSL formula looks muddy for some hues (yellows go olive,
- * greens go khaki), so each entry sets its own deep tab color, pale tint and readable text color.
+ * greens go khaki), so each entry is a deep color picked by hand that reads well under white text.
  * `hue` is the color's real hue, used to map the hue stored on an objective to its nearest entry.
  */
 const OBJECTIVE_PALETTE = [
-  { hue: 0, vivid: '#DC2626', pale: '#FEE2E2', text: '#991B1B' }, // red
-  { hue: 21, vivid: '#EA580C', pale: '#FFEDD5', text: '#9A3412' }, // orange
-  { hue: 38, vivid: '#D97706', pale: '#FEF3C7', text: '#92400E' }, // amber
-  { hue: 85, vivid: '#65A30D', pale: '#ECFCCB', text: '#3F6212' }, // lime
-  { hue: 142, vivid: '#16A34A', pale: '#DCFCE7', text: '#166534' }, // green
-  { hue: 175, vivid: '#0D9488', pale: '#CCFBF1', text: '#115E59' }, // teal
-  { hue: 195, vivid: '#0891B2', pale: '#CFFAFE', text: '#155E75' }, // cyan
-  { hue: 221, vivid: '#2563EB', pale: '#DBEAFE', text: '#1E40AF' }, // blue
-  { hue: 243, vivid: '#4F46E5', pale: '#E0E7FF', text: '#3730A3' }, // indigo
-  { hue: 262, vivid: '#7C3AED', pale: '#EDE9FE', text: '#5B21B6' }, // violet
-  { hue: 293, vivid: '#C026D3', pale: '#FAE8FF', text: '#86198F' }, // fuchsia
-  { hue: 333, vivid: '#DB2777', pale: '#FCE7F3', text: '#9D174D' }, // pink
+  { hue: 0, vivid: '#DC2626' }, // red
+  { hue: 21, vivid: '#EA580C' }, // orange
+  { hue: 38, vivid: '#D97706' }, // amber
+  { hue: 85, vivid: '#65A30D' }, // lime
+  { hue: 142, vivid: '#16A34A' }, // green
+  { hue: 175, vivid: '#0D9488' }, // teal
+  { hue: 195, vivid: '#0891B2' }, // cyan
+  { hue: 221, vivid: '#2563EB' }, // blue
+  { hue: 243, vivid: '#4F46E5' }, // indigo
+  { hue: 262, vivid: '#7C3AED' }, // violet
+  { hue: 293, vivid: '#C026D3' }, // fuchsia
+  { hue: 333, vivid: '#DB2777' }, // pink
 ]
 
 function hueDistance(a: number, b: number) {
@@ -46,9 +46,17 @@ export function nextDistinctHue(existingHues: number[]): number {
   return best
 }
 
-export const paleHue = (hue: number) => paletteFor(hue).pale
-export const paleTextHue = (hue: number) => paletteFor(hue).text
 export const vividHue = (hue: number) => paletteFor(hue).vivid
+
+/** Every objective tab shows its full color; the selected one gets a ring in that color. */
+export function objectiveTabStyle(hue: number, isActive: boolean) {
+  const color = vividHue(hue)
+  return {
+    backgroundColor: color,
+    color: 'white',
+    boxShadow: isActive ? `0 0 0 2px white, 0 0 0 4px ${color}` : undefined,
+  }
+}
 
 /** Hand-picked, fixed 8-color member palette. Each is meant to be used by at most one person at a time. */
 export const MEMBER_PALETTE: string[] = [

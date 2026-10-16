@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { paleHue, paleTextHue, vividHue } from '../../lib/color'
+import { objectiveTabStyle } from '../../lib/color'
 import type { Objective } from '../../types'
 
 export function ObjectiveTabs({
@@ -74,14 +74,10 @@ export function ObjectiveTabs({
                 setEditTitle(obj.title)
               }}
               className="rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
-              style={
-                isActive
-                  ? { backgroundColor: vividHue(obj.hue), color: 'white' }
-                  : { backgroundColor: paleHue(obj.hue), color: paleTextHue(obj.hue) }
-              }
+              style={objectiveTabStyle(obj.hue, isActive)}
             >
               {obj.title}
-              <span className={isActive ? 'ml-1.5 opacity-80' : 'ml-1.5 opacity-60'}>
+              <span className="ml-1.5 opacity-80">
                 [{pendingCounts[obj.id] ?? 0}]
               </span>
             </button>
