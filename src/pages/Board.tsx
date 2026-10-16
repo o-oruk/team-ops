@@ -9,7 +9,7 @@ import { TaskRow } from '../components/objectives/TaskRow'
 
 export function Board() {
   const { profile } = useAuth()
-  const { objectives, addObjective, renameObjective, deleteObjective } = useObjectives()
+  const { activeObjectives: objectives, addObjective, renameObjective, deleteObjective } = useObjectives()
   const { profiles } = useProfiles()
   const { tasks, addTask, updateTask, updateAssignees, deleteTask, pushToDaily, reopenTask, updateCompletedDate } =
     useTasks()

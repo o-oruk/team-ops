@@ -5,7 +5,6 @@ import { usePresence } from '../../hooks/usePresence'
 import { useProfiles } from '../../hooks/useProfiles'
 import { useChat } from '../../hooks/useChat'
 import { Avatar } from './Avatar'
-import { Countdown } from './Countdown'
 import { ExportDataButton } from './ExportDataButton'
 import { Logo } from './Logo'
 
@@ -16,6 +15,7 @@ const NAV_ITEMS = [
   { to: '/calendar', label: 'Calendar' },
   { to: '/team', label: 'Team' },
   { to: '/chat', label: 'Chat' },
+  { to: '/sprints', label: 'Sprints' },
 ]
 
 const DRIVE_FOLDER_URL = 'https://drive.google.com/drive/folders/1CpxMWZJKCWwBrp-Dipca6WqA6oUYRsYk?usp=sharing'
@@ -30,7 +30,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="sticky top-0 z-10">
-        <Countdown />
         <header className="border-b border-slate-200 bg-white/90 backdrop-blur">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3">
             <div className="flex items-center gap-6">

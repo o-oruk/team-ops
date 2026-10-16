@@ -16,6 +16,16 @@ create table if not exists profiles (
   created_at timestamptz not null default now()
 );
 
+-- A finished, time-boxed push (e.g. the Sheraa validation sprint). Its objectives and their tasks
+-- are archived under it and shown read-only on the Sprints page; everything else is ongoing ops.
+create table if not exists sprints (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  start_date date not null,
+  end_date date not null,
+  created_at timestamptz not null default now()
+);
+
 create table if not exists objectives (
   id uuid primary key default gen_random_uuid(),
   title text not null,
@@ -23,6 +33,9 @@ create table if not exists objectives (
   hue int not null default 0,
   created_at timestamptz not null default now()
 );
+
+-- null = an active objective on the Roadmap; set = archived into that sprint.
+alter table objectives add column if not exists sprint_id uuid references sprints (id) on delete set null;
 
 create table if not exists tasks (
   id uuid primary key default gen_random_uuid(),
@@ -143,6 +156,7 @@ create trigger on_auth_user_created
 -- ─────────────────────────────────────────────────────────────
 
 alter table profiles enable row level security;
+alter table sprints enable row level security;
 alter table objectives enable row level security;
 alter table tasks enable row level security;
 alter table task_assignees enable row level security;
@@ -164,6 +178,19 @@ create policy "a user can update only their own profile"
 
 create policy "admin can update any profile"
   on profiles for update
+  to authenticated
+  using (exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin'))
+  with check (exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin'));
+
+drop policy if exists "sprints readable by signed-in users" on sprints;
+create policy "sprints readable by signed-in users"
+  on sprints for select
+  to authenticated
+  using (true);
+
+drop policy if exists "only the admin can manage sprints" on sprints;
+create policy "only the admin can manage sprints"
+  on sprints for all
   to authenticated
   using (exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin'))
   with check (exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin'));
@@ -239,6 +266,7 @@ create policy "message_reads full access own"
 alter publication supabase_realtime add table tasks;
 alter publication supabase_realtime add table task_assignees;
 alter publication supabase_realtime add table objectives;
+alter publication supabase_realtime add table sprints;
 alter publication supabase_realtime add table important_dates;
 alter publication supabase_realtime add table messages;
 

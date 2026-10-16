@@ -24,9 +24,12 @@ export function useObjectives() {
     }
   }, [])
 
+  // Objectives archived into a finished sprint live on the Sprints page, not the Roadmap.
+  const activeObjectives = objectives.filter((o) => !o.sprint_id)
+
   async function addObjective(title: string) {
     const position = objectives.length
-    const hue = nextDistinctHue(objectives.map((o) => o.hue))
+    const hue = nextDistinctHue(activeObjectives.map((o) => o.hue))
     const { error } = await supabase.from('objectives').insert({ title, position, hue })
     if (error) throw error
     await load()
@@ -44,5 +47,5 @@ export function useObjectives() {
     await load()
   }
 
-  return { objectives, loading, addObjective, renameObjective, deleteObjective, refresh: load }
+  return { objectives, activeObjectives, loading, addObjective, renameObjective, deleteObjective, refresh: load }
 }

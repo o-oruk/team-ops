@@ -1,19 +1,26 @@
 # Team Ops Dashboard
 
-Internal execution tool for the team during the Sheraa validation sprint (through the Oct 15
-pitch competition). Tracks the three main objectives, daily to-dos, and a progress tracker that
-shows how consistently the team is executing. Built for four people — not a customer-facing
-product.
+Internal operations tool for the team. Tracks the company's ongoing objectives, daily to-dos, and
+a progress tracker that shows how consistently the team is executing. Built for four people — not
+a customer-facing product.
+
+It started life as the execution tool for the Sheraa validation sprint (Aug 17 – Oct 15, 2026).
+That sprint is archived, read-only, under **Sprints**; everything else runs perpetually.
 
 **Stack:** Vite + React + TypeScript + Tailwind CSS, Supabase (Postgres + Auth), deployed to
 GitHub Pages via GitHub Actions.
 
 ## Screens
 
-- **Board** — the three objectives as tabs, each with its own task backlog.
-- **Daily** — today's to-do list, a "Mine" and "Team" view of the same underlying tasks.
-- **Progress** — a GitHub-style heatmap of daily execution, team-wide and per teammate.
+- **Roadmap** — the active objectives as tabs, each with its own task backlog.
+- **Tasks** — today's to-do list, a "Mine" and "Team" view of the same underlying tasks.
+- **Progress** — a GitHub-style heatmap of daily execution over the last 6 months, team-wide and
+  per teammate.
 - **Calendar** — important dates and scheduled tasks, chronologically.
+- **Team** / **Chat** — teammate profiles and a shared chat.
+- **Sprints** — finished sprints, archived read-only: their objectives, tasks and progress
+  heatmaps. An objective belongs to a sprint when `objectives.sprint_id` is set; everything with
+  no sprint is active ops.
 
 ## Run it locally
 
@@ -135,7 +142,8 @@ See [`supabase/schema.sql`](./supabase/schema.sql) for the full schema. Summary:
 
 - `profiles` — one row per teammate (name, initials, color, role), auto-created on signup, claimed
   on first login.
-- `objectives` — the roadmap tabs.
+- `sprints` — finished, time-boxed pushes (name + date range), shown on the Sprints screen.
+- `objectives` — the roadmap tabs. `sprint_id` null = active; set = archived into that sprint.
 - `tasks` — every task, with weight (1/2/3), assignee, status (`backlog` / `daily` / `done`), and
   completion info. A day's points = sum of weights of tasks with that `completed_date`. There is
   no separate points table — everything on the Progress screen is derived live from this table.

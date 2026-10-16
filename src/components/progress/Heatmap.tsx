@@ -1,4 +1,4 @@
-import { LEVEL_COLOR, SPRINT_END, levelForPoints, toWeeks } from '../../lib/progress'
+import { LEVEL_COLOR, levelForPoints, toWeeks } from '../../lib/progress'
 
 const MONTH_NAMES = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
@@ -10,6 +10,7 @@ export function Heatmap({
   today,
   joinedDate,
   cellSize = 13,
+  milestone,
   onSelectDate,
 }: {
   dates: string[]
@@ -17,12 +18,13 @@ export function Heatmap({
   today: string
   joinedDate?: string
   cellSize?: number
+  /** A day to mark with a red × and label beside the grid (e.g. a sprint's pitch day). */
+  milestone?: { date: string; label: string }
   onSelectDate?: (date: string) => void
 }) {
   const weeks = toWeeks(dates)
-  const pitchDayRow = dates.includes(SPRINT_END)
-    ? new Date(SPRINT_END + 'T00:00:00').getDay()
-    : -1
+  const milestoneRow =
+    milestone && dates.includes(milestone.date) ? new Date(milestone.date + 'T00:00:00').getDay() : -1
 
   return (
     <div className="-m-2 overflow-x-auto p-2">
@@ -45,13 +47,13 @@ export function Heatmap({
                 const points = pointsByDate.get(date) ?? 0
                 const level = levelForPoints(points, date, today, joinedDate)
                 const clickable = onSelectDate && level !== 'future' && level !== 'not-joined'
-                const isPitchDay = date === SPRINT_END
+                const isMilestone = date === milestone?.date
                 const title =
                   level === 'not-joined'
-                    ? `${date} — not on the team yet`
+                    ? `${date} — not tracked yet`
                     : level === 'future'
-                      ? `${date} — upcoming${isPitchDay ? ' · Seal the Deal' : ''}`
-                      : `${date} — ${points} point${points === 1 ? '' : 's'}${isPitchDay ? ' · Seal the Deal' : ''}${clickable ? ' (click for details)' : ''}`
+                      ? `${date} — upcoming${isMilestone ? ` · ${milestone?.label}` : ''}`
+                      : `${date} — ${points} point${points === 1 ? '' : 's'}${isMilestone ? ` · ${milestone?.label}` : ''}${clickable ? ' (click for details)' : ''}`
                 return (
                   <button
                     key={di}
@@ -68,7 +70,7 @@ export function Heatmap({
                       clickable ? 'cursor-pointer hover:scale-150' : 'cursor-default'
                     }`}
                   >
-                    {isPitchDay && (
+                    {isMilestone && (
                       <span
                         aria-hidden="true"
                         className="pointer-events-none absolute inset-0 flex items-center justify-center font-bold text-red-600"
@@ -83,17 +85,17 @@ export function Heatmap({
             </div>
           )
         })}
-        {pitchDayRow !== -1 && (
+        {milestone && milestoneRow !== -1 && (
           <div className="flex flex-col gap-[3px]">
             <div style={{ height: 12 }} />
             {Array.from({ length: 7 }, (_, row) =>
-              row === pitchDayRow ? (
+              row === milestoneRow ? (
                 <div
                   key={row}
                   style={{ height: cellSize }}
                   className="flex items-center whitespace-nowrap text-[10px] font-semibold text-red-600"
                 >
-                  Seal the Deal
+                  {milestone.label}
                 </div>
               ) : (
                 <div key={row} style={{ height: cellSize }} />

@@ -12,11 +12,21 @@ export interface Profile {
   created_at: string
 }
 
+export interface Sprint {
+  id: string
+  name: string
+  start_date: string
+  end_date: string
+  created_at: string
+}
+
 export interface Objective {
   id: string
   title: string
   position: number
   hue: number
+  /** null (or missing, before the sprints migration has run) = active on the Roadmap. */
+  sprint_id?: string | null
   created_at: string
 }
 

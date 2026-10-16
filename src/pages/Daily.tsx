@@ -11,13 +11,16 @@ import type { Task } from '../types'
 
 export function Daily() {
   const { profile } = useAuth()
-  const { tasks, completeTask, returnToBacklog } = useTasks()
+  const { tasks: allTasks, completeTask, returnToBacklog } = useTasks()
   const { profiles } = useProfiles()
-  const { objectives } = useObjectives()
+  const { objectives, activeObjectives } = useObjectives()
   const presence = usePresence()
   const [view, setView] = useState<'team' | 'mine'>('team')
 
   const today = todayISO()
+  // Unfinished tasks from an archived sprint don't carry over into day-to-day ops.
+  const activeIds = new Set(activeObjectives.map((o) => o.id))
+  const tasks = allTasks.filter((t) => activeIds.has(t.objective_id))
   const manualDaily = tasks.filter((t) => t.status === 'daily')
   const autoDue = tasks.filter((t) => t.status === 'backlog' && !!t.due_date && t.due_date <= today)
   const combined = [...manualDaily, ...autoDue]

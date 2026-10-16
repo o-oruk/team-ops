@@ -1,8 +1,11 @@
 import type { Task } from '../types'
 
-// Fixed sprint window: today the app was built through the pitch competition.
-export const SPRINT_START = '2026-08-17'
-export const SPRINT_END = '2026-10-15'
+// The day the dashboard switched from the Sheraa sprint to ongoing operations. Nothing before it
+// counts toward the Progress page; that history lives on the Sprints page instead.
+export const OPS_START = '2026-10-16'
+
+// How far back the ongoing Progress heatmap looks.
+export const PROGRESS_WINDOW_DAYS = 182
 
 export type PointLevel = 'future' | 'not-joined' | 'red' | 'orange' | 'yellow' | 'green'
 
@@ -11,6 +14,18 @@ export const STRONG_DAY_POINTS = 5
 
 export function todayISO() {
   return new Date().toLocaleDateString('en-CA')
+}
+
+/** `date` shifted by `days` (negative = earlier), as YYYY-MM-DD. */
+export function addDays(date: string, days: number) {
+  const d = new Date(date + 'T00:00:00')
+  d.setDate(d.getDate() + days)
+  return d.toLocaleDateString('en-CA')
+}
+
+/** Ongoing Progress window: the last PROGRESS_WINDOW_DAYS days, ending today. */
+export function opsDateRange(today: string): string[] {
+  return dateRange(addDays(today, -(PROGRESS_WINDOW_DAYS - 1)), today)
 }
 
 export function dateRange(start: string, end: string): string[] {
@@ -49,7 +64,7 @@ export const LEVEL_COLOR: Record<PointLevel, string> = {
 
 export const LEVEL_LABEL: Record<PointLevel, string> = {
   future: 'Upcoming',
-  'not-joined': 'Not on the team yet',
+  'not-joined': 'Not tracked yet',
   red: 'No execution (0 pts)',
   orange: 'Light day (1-2 pts)',
   yellow: 'Moderate day (3-4 pts)',

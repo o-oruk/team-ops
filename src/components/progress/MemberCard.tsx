@@ -10,6 +10,8 @@ export function MemberCard({
   pointsByDate,
   today,
   presence,
+  trackingStart,
+  milestone,
   onSelectDate,
 }: {
   profile: Profile
@@ -17,9 +19,13 @@ export function MemberCard({
   pointsByDate: Map<string, number>
   today: string
   presence?: PresenceStatus
+  /** Days before this (or before the person joined, whichever is later) aren't counted. */
+  trackingStart?: string
+  milestone?: { date: string; label: string }
   onSelectDate: (date: string) => void
 }) {
-  const joinedDate = profile.created_at.slice(0, 10)
+  const joined = profile.created_at.slice(0, 10)
+  const joinedDate = trackingStart && trackingStart > joined ? trackingStart : joined
   const total = totalPoints(pointsByDate, dates)
   const rate = activeDayRate(pointsByDate, dates, today, joinedDate)
   const streak = currentStreak(pointsByDate, dates, today)
@@ -52,6 +58,7 @@ export function MemberCard({
         today={today}
         joinedDate={joinedDate}
         cellSize={10}
+        milestone={milestone}
         onSelectDate={onSelectDate}
       />
     </div>

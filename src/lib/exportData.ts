@@ -5,7 +5,7 @@ import { supabase } from './supabase'
  * Bump this whenever a table/column included below changes shape, so a future import feature (and
  * anyone reading an old export) can tell which layout a given .zip was written against.
  */
-const SCHEMA_VERSION = 1
+const SCHEMA_VERSION = 2 // 2: added sprints + objectives.sprint_id
 
 type Row = Record<string, unknown>
 
@@ -30,7 +30,8 @@ async function fetchAll(table: string, orderBy: string): Promise<Row[]> {
 /** Column order for each table's CSV — the full, current column list from supabase/schema.sql. */
 const COLUMNS = {
   profiles: ['id', 'name', 'email', 'initials', 'color', 'role', 'claimed', 'created_at'],
-  objectives: ['id', 'title', 'position', 'hue', 'created_at'],
+  sprints: ['id', 'name', 'start_date', 'end_date', 'created_at'],
+  objectives: ['id', 'title', 'position', 'hue', 'sprint_id', 'created_at'],
   tasks: [
     'id',
     'objective_id',
@@ -58,8 +59,9 @@ const COLUMNS = {
  * auth accounts can't be recreated with their original IDs).
  */
 export async function exportAllData(): Promise<void> {
-  const [profiles, objectives, tasks, taskAssignees, importantDates, messages, messageReads] = await Promise.all([
+  const [profiles, sprints, objectives, tasks, taskAssignees, importantDates, messages, messageReads] = await Promise.all([
     fetchAll('profiles', 'created_at'),
+    fetchAll('sprints', 'start_date'),
     fetchAll('objectives', 'position'),
     fetchAll('tasks', 'created_at'),
     fetchAll('task_assignees', 'task_id'),
@@ -70,6 +72,7 @@ export async function exportAllData(): Promise<void> {
 
   const zip = new JSZip()
   zip.file('profiles.csv', toCsv(profiles, COLUMNS.profiles))
+  zip.file('sprints.csv', toCsv(sprints, COLUMNS.sprints))
   zip.file('objectives.csv', toCsv(objectives, COLUMNS.objectives))
   zip.file('tasks.csv', toCsv(tasks, COLUMNS.tasks))
   zip.file('task_assignees.csv', toCsv(taskAssignees, COLUMNS.task_assignees))
@@ -83,6 +86,7 @@ export async function exportAllData(): Promise<void> {
     schema_version: SCHEMA_VERSION,
     row_counts: {
       profiles: profiles.length,
+      sprints: sprints.length,
       objectives: objectives.length,
       tasks: tasks.length,
       task_assignees: taskAssignees.length,
@@ -98,7 +102,7 @@ export async function exportAllData(): Promise<void> {
       timestamps: 'ISO 8601 with timezone offset, as Postgres returns a `timestamptz` column',
       ids: 'UUIDs as plain text — see known_limitations for the one case these can\'t be restored as-is',
       foreign_keys:
-        'tasks.objective_id -> objectives.id; tasks.completed_by/created_by, task_assignees.profile_id, ' +
+        'objectives.sprint_id -> sprints.id (empty = active on the Roadmap); tasks.objective_id -> objectives.id; tasks.completed_by/created_by, task_assignees.profile_id, ' +
         'messages.sender_id, message_reads.profile_id, important_dates.created_by -> profiles.id; ' +
         'task_assignees.task_id -> tasks.id',
     },

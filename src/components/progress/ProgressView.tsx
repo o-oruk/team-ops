@@ -1,0 +1,124 @@
+import { useState } from 'react'
+import { useProfiles } from '../../hooks/useProfiles'
+import { usePresence } from '../../hooks/usePresence'
+import type { Objective, Task } from '../../types'
+import { DayTasksModal } from './DayTasksModal'
+import { Heatmap } from './Heatmap'
+import { MemberCard } from './MemberCard'
+import { PointsExplainer } from './PointsExplainer'
+import { StreakFlame } from './StreakFlame'
+import {
+  STRONG_DAY_POINTS,
+  currentStreak,
+  memberPointsByDate,
+  tasksCompletedOn,
+  teamPointsByDate,
+  totalPoints,
+} from '../../lib/progress'
+
+/**
+ * Streak, team heatmap and per-teammate heatmaps for one set of tasks over one date range. Used by
+ * the ongoing Progress page and by each archived sprint on the Sprints page.
+ */
+export function ProgressView({
+  tasks,
+  objectives,
+  dates,
+  today,
+  trackingStart,
+  milestone,
+  totalLabel,
+  showStreak = true,
+}: {
+  tasks: Task[]
+  objectives: Objective[]
+  dates: string[]
+  today: string
+  trackingStart?: string
+  milestone?: { date: string; label: string }
+  totalLabel: string
+  showStreak?: boolean
+}) {
+  const { profiles } = useProfiles()
+  const presence = usePresence()
+  const teamPoints = teamPointsByDate(tasks)
+  const teamTotal = totalPoints(teamPoints, dates)
+  const teamStreak = currentStreak(teamPoints, dates, today, STRONG_DAY_POINTS)
+  const claimedProfiles = profiles.filter((p) => p.claimed)
+
+  const [selectedDay, setSelectedDay] = useState<{ date: string; memberId: string | null } | null>(
+    null,
+  )
+
+  return (
+    <div className="space-y-6">
+      {showStreak && (
+        <div className="flex items-center gap-4 rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-white p-4">
+          <StreakFlame streak={teamStreak} size={48} />
+          <div className="min-w-0">
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-extrabold text-emerald-600">{teamStreak}</span>
+              <span className="text-sm font-semibold text-slate-700">day streak</span>
+            </div>
+            <p className="text-xs text-slate-500">Team needs {STRONG_DAY_POINTS}+ points a day to keep it going.</p>
+          </div>
+        </div>
+      )}
+
+      <PointsExplainer />
+
+      <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-800">Team activity</h2>
+          <span className="text-sm text-slate-500">
+            {teamTotal} points {totalLabel}
+          </span>
+        </div>
+        <Heatmap
+          dates={dates}
+          pointsByDate={teamPoints}
+          today={today}
+          joinedDate={trackingStart}
+          cellSize={13}
+          milestone={milestone}
+          onSelectDate={(date) => setSelectedDay({ date, memberId: null })}
+        />
+        <p className="mt-2 text-xs text-slate-400">Click any day to see what got done.</p>
+      </div>
+
+      <div>
+        <h2 className="mb-3 text-sm font-semibold text-slate-800">By teammate</h2>
+        {claimedProfiles.length === 0 ? (
+          <p className="text-sm text-slate-500">No one has claimed a profile yet.</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {claimedProfiles.map((profile) => (
+              <MemberCard
+                key={profile.id}
+                profile={profile}
+                dates={dates}
+                pointsByDate={memberPointsByDate(tasks, profile.id)}
+                today={today}
+                presence={presence[profile.id] ?? 'offline'}
+                trackingStart={trackingStart}
+                milestone={milestone}
+                onSelectDate={(date) => setSelectedDay({ date, memberId: profile.id })}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {selectedDay && (
+        <DayTasksModal
+          date={selectedDay.date}
+          tasks={tasksCompletedOn(tasks, selectedDay.date, selectedDay.memberId ?? undefined)}
+          profiles={profiles}
+          objectives={objectives}
+          showAssignee={selectedDay.memberId === null}
+          onClose={() => setSelectedDay(null)}
+        />
+      )}
+    </div>
+  )
+}
