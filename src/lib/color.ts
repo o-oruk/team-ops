@@ -75,6 +75,15 @@ export const TEXT_COLOR_OVERRIDES: Record<string, string> = {
   '#EAB308': '#3D2E00',
 }
 
+/** Light swatches that need a darker shade when used as text on a white background. */
+const ON_WHITE_OVERRIDES: Record<string, string> = {
+  '#EAB308': '#A16207',
+}
+
+export function textOnWhite(color: string): string {
+  return ON_WHITE_OVERRIDES[color.toUpperCase()] ?? color
+}
+
 export function textColorFor(background: string): string {
   return TEXT_COLOR_OVERRIDES[background.toUpperCase()] ?? 'white'
 }
