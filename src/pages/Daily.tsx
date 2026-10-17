@@ -25,6 +25,23 @@ function shortDay(day: string, today: string) {
 const daysBetween = (from: string, to: string) =>
   Math.round((new Date(to + 'T00:00:00').getTime() - new Date(from + 'T00:00:00').getTime()) / 86_400_000)
 
+const DAY_ARROW_CLASS =
+  'flex h-9 w-9 items-center justify-center rounded-full border border-accent/30 bg-white text-accent shadow-sm transition-colors hover:border-accent hover:bg-accent hover:text-white disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-transparent disabled:text-slate-300 disabled:shadow-none'
+
+function Chevron({ direction }: { direction: 'left' | 'right' }) {
+  return (
+    <svg viewBox="0 0 20 20" className="h-5 w-5" fill="none" aria-hidden="true">
+      <path
+        d={direction === 'left' ? 'M12.5 4.5L7 10l5.5 5.5' : 'M7.5 4.5L13 10l-5.5 5.5'}
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 export function Daily() {
   const { profile } = useAuth()
   const { tasks: allTasks, completeTask, returnToBacklog } = useTasks()
@@ -119,14 +136,14 @@ export function Daily() {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setDayOffset((d) => Math.max(0, d - 1))}
             disabled={isToday}
             aria-label="Previous day"
-            className="flex h-7 w-7 items-center justify-center rounded-md text-slate-500 hover:bg-slate-200 hover:text-slate-800 disabled:invisible"
+            className={DAY_ARROW_CLASS}
           >
-            ‹
+            <Chevron direction="left" />
           </button>
           <h1 className="min-w-[9.5rem] text-center text-lg font-semibold text-slate-900">
             {dayHeading(viewDay, today)}
@@ -134,9 +151,9 @@ export function Daily() {
           <button
             onClick={() => setDayOffset((d) => d + 1)}
             aria-label="Next day"
-            className="flex h-7 w-7 items-center justify-center rounded-md text-slate-500 hover:bg-slate-200 hover:text-slate-800"
+            className={DAY_ARROW_CLASS}
           >
-            ›
+            <Chevron direction="right" />
           </button>
           {!isToday && (
             <button
