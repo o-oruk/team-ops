@@ -12,6 +12,13 @@ export function dueCountdownParts(dueDate: string, today: string) {
   return { prefix: '', redPart: `${overdueDays} day${overdueDays === 1 ? '' : 's'}`, suffix: ' overdue' }
 }
 
+/** `date` (YYYY-MM-DD) shifted by `days`, in local time. */
+export function addDaysISO(date: string, days: number) {
+  const d = new Date(date + 'T00:00:00')
+  d.setDate(d.getDate() + days)
+  return d.toLocaleDateString('en-CA')
+}
+
 export function isUrgentDue(dueDate: string | null, done: boolean, today: string) {
   return !!dueDate && !done && dueDate <= today
 }

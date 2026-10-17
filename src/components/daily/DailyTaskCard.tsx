@@ -14,6 +14,7 @@ export function DailyTaskCard({
   onReturnToBacklog,
   sharedWith = [],
   viewerId,
+  isUpcoming = false,
 }: {
   task: Task
   objective: Objective | undefined
@@ -25,6 +26,8 @@ export function DailyTaskCard({
   /** The task's other assignees, besides the person whose list this card is on. */
   sharedWith?: Profile[]
   viewerId?: string
+  /** Previewing a future day: not on today's list yet, so no "Due" pill or remove button. */
+  isUpcoming?: boolean
 }) {
   const isDone = task.status === 'done'
   const isOverdue = !isDone && !!task.due_date && task.due_date < today
@@ -88,6 +91,7 @@ export function DailyTaskCard({
         <DueBadge dueDate={task.due_date} today={today} isUrgent={isUrgentDue(task.due_date, false, today)} />
       )}
       {!isDone &&
+        !isUpcoming &&
         (onReturnToBacklog ? (
           <button
             onClick={() => void onReturnToBacklog()}
